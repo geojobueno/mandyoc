@@ -673,8 +673,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_diffusion_sedimentation_only(Pet
 
     sea_level = sp_evaluate_adjusted_mean_elevation_with_sea_level();
 
-    PetscInt nt = (PetscInt)ceil((4.0 * Ks * dt) / (dx_s * dx_s));
-    PetscReal dt_s = dt / nt;
+
 
     if (!rank) {
         ierr = PetscCalloc1(n, &hw); CHKERRQ(ierr);
@@ -683,6 +682,9 @@ PetscErrorCode sp_evaluate_surface_processes_2d_diffusion_sedimentation_only(Pet
         ierr = PetscCalloc1(n, &flux); CHKERRQ(ierr);
 
         dx_s = seq_array[2];
+
+        PetscInt nt = (PetscInt)ceil((4.0 * Ks * dt) / (dx_s * dx_s));
+        PetscReal dt_s = dt / nt;
 
         for (i = 0; i < nt; i++) {
 
