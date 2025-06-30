@@ -164,7 +164,7 @@ PetscErrorCode sp_create_surface_swarm_2d()
         ierr = DMSwarmRestoreField(dms_s, DMSwarmPICField_coor, &bs, NULL, (void **)&array); CHKERRQ(ierr); //
 
         ierr = DMView(dms_s, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-        ierr = sp_view_2d(dms_s, "inital_surface"); CHKERRQ(ierr);
+        ierr = sp_view_2d(dms_s, "initial_surface"); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
