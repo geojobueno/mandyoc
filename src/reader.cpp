@@ -94,6 +94,7 @@ extern PetscScalar K_fluvial;
 extern PetscScalar m_fluvial;
 extern PetscScalar sea_level;
 extern PetscScalar basal_heat;
+extern PetscScalar air_temperature;
 extern PetscBool sp_surface_tracking;
 extern PetscBool sp_surface_processes;
 extern PetscReal sp_d_c;
@@ -302,6 +303,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "a2l") == 0) {a2l = check_a_b_bool(tkn_w, tkn_v, "True", "False");}
 			else if (strcmp(tkn_w, "export_thermal_diffusivity") == 0) {export_kappa = check_a_b_bool(tkn_w, tkn_v, "True", "False");}
 
+			else if (strcmp(tkn_w, "air_temperature") == 0) {air_temperature = atof(tkn_v);}
+
 			else if (strcmp(tkn_w, "high_kappa_in_asthenosphere") == 0) {high_kappa_in_asthenosphere = check_a_b(tkn_w, tkn_v, "True", "False");}
 
 			else if (strcmp(tkn_w, "nondimensionalization") == 0) {non_dim = check_a_b(tkn_w, tkn_v, "True", "False");}
@@ -474,6 +477,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&weakening_min,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&weakening_max,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&export_kappa,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
+
+	MPI_Bcast(&air_temperature,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
 
 	MPI_Bcast(&non_dim,1,MPI_INT,0,PETSC_COMM_WORLD);
 
