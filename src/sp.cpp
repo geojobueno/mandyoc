@@ -37,6 +37,8 @@ extern PetscReal epsilon_x;
 extern Vec local_V;
 extern Vec Veloc_weight;
 
+extern double seg_per_ano;
+
 typedef struct {
 	PetscScalar u;
 	PetscScalar w;
@@ -52,6 +54,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_diffusion(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_only(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_diffusion_sedimentation_only(PetscReal dt);
+PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties();
 PetscErrorCode DMLocatePoints_DMDARegular_2d(DM dm,Vec pos,DMPointLocationType ltype, PetscSF cellSF);
 PetscErrorCode DMGetNeighbors_DMDARegular_2d(DM dm,PetscInt *nneighbors,const PetscMPIInt **neighbors);
@@ -486,6 +489,9 @@ PetscErrorCode sp_evaluate_surface_processes_2d(PetscReal dt)
     else if (sp_mode == SP_SEDIMENTATION_ONLY) {
         ierr = sp_evaluate_surface_processes_2d_sedimentation_only(dt); CHKERRQ(ierr);
     }
+    else if (sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {
+        ierr = sp_evaluate_surface_processes_2d_sedimentation_rate_limited(dt); CHKERRQ(ierr);
+    }
     else if (sp_mode == SP_DIFFUSION_SEDIMENTATION_ONLY) {
         ierr = sp_evaluate_surface_processes_2d_diffusion_sedimentation_only(dt); CHKERRQ(ierr);
     }
@@ -623,6 +629,133 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_only(PetscReal dt)
     PetscSynchronizedFlush(PETSC_COMM_WORLD, PETSC_STDOUT);
 
     ierr = DMSwarmRestoreField(dms_s, DMSwarmPICField_coor, &bs, NULL, (void **)&array); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(PetscReal dt)
+{
+    PetscErrorCode ierr;
+    PetscMPIInt rank;
+
+    PetscFunctionBeginUser;
+
+    ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank); CHKERRQ(ierr);
+
+    PetscInt n;
+    PetscInt i;
+    PetscInt j;
+    PetscInt si;
+    PetscInt bs;
+
+    PetscInt nlocal;
+    PetscInt seq_surface_size;
+
+    Vec global_surface;
+    Vec seq_surface;
+    VecScatter ctx;
+    PetscReal *seq_array;
+    PetscReal *array;
+
+    ierr = DMSwarmCreateGlobalVectorFromField(dms_s, DMSwarmPICField_coor, &global_surface); CHKERRQ(ierr);
+    ierr = VecScatterCreateToZero(global_surface, &ctx, &seq_surface); CHKERRQ(ierr);
+    ierr = VecScatterBegin(ctx, global_surface, seq_surface, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterEnd(ctx, global_surface, seq_surface, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
+    ierr = DMSwarmDestroyGlobalVectorFromField(dms_s, DMSwarmPICField_coor, &global_surface); CHKERRQ(ierr);
+
+    ierr = VecGetSize(seq_surface, &seq_surface_size); CHKERRQ(ierr);
+    ierr = VecGetArray(seq_surface, &seq_array); CHKERRQ(ierr);
+
+    n = seq_surface_size/2;
+
+    PetscReal hsl = sp_evaluate_adjusted_mean_elevation_with_sea_level();
+
+    PetscReal sedimentation_rate = 50.0; //m^2/year
+    PetscReal sed_per_dt = sedimentation_rate * dt/seg_per_ano; // m^2
+    PetscReal sed_aux, diff_h;
+    PetscReal dx_sed = seq_array[2*1]-seq_array[2*0];
+    PetscReal sed_sum = sed_per_dt/dx_sed; // m (cumulative sedimentation per dx_sed)
+
+    
+
+    if (!rank) {
+        //printf("rank = %d\n",rank);
+        //printf("dt = %lf\n",dt);
+        //printf("dt/seg_per_ano = %lf\n",dt/seg_per_ano);
+        //printf("sed_per_dt = %lf\n",sed_per_dt);
+        //printf("dx_sed = %lf\n",dx_sed);
+        //printf("sed_sum = %lf\n",sed_sum);
+        //printf("sea_level = %lf\n",hsl);
+        //for (i=0;i<n;i++){
+            //printf("%f %f %f\n",sea_level,seq_array[2*i+0],seq_array[2*i+1]);
+        //}
+        sed_aux = sed_sum;
+        //left margin 
+        for (i=0;seq_array[2*i+0]<200.0E3;i++); printf("i = %d, n = %d\n",i,n);
+        for (j=i;(sed_aux>0)&&(j<n);j++){
+            if (seq_array[2*j+1]<hsl){
+                //printf("%d %lf %lf ",j,sed_aux,seq_array[2*j+1]);
+                diff_h = hsl - seq_array[2*j+1];
+                if (diff_h<=sed_aux){
+                    seq_array[2*j+1]=hsl;
+                    sed_aux -= diff_h;
+                }
+                else {
+                    seq_array[2*j+1]+=sed_aux;
+                    sed_aux = 0.0;
+                }
+                //printf("%lf\n",seq_array[2*j+1]);
+            }
+            //else printf("%d\n",j);
+        }
+        //printf("sed_aux = %lf\n",sed_aux);
+
+
+        sed_aux = sed_sum;
+        //right margin
+        for (i=n-1;seq_array[2*i+0]>seq_array[2*(n-1)+0]-200.0E3;i--); printf("i = %d, n = %d\n",i,n);
+        
+        for (j=i;(sed_aux>0)&&(j>0);j--){
+            if (seq_array[2*j+1]<hsl){
+                //printf("%d %lf\n",j,sed_aux);
+                diff_h = hsl - seq_array[2*j+1];
+                if (diff_h<=sed_aux){
+                    seq_array[2*j+1]=hsl;
+                    sed_aux -= diff_h;
+                }
+                else {
+                    seq_array[2*j+1]+=sed_aux;
+                    sed_aux = 0.0;
+                }
+            }
+        }
+
+        /*for (j=0;j<n;j++){
+            
+        }*/
+        
+    }
+
+    ierr = MPI_Bcast(&seq_surface_size, 1, MPI_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+
+    if (rank) {
+        ierr = PetscCalloc1(seq_surface_size, &seq_array); CHKERRQ(ierr);
+    }
+    ierr = MPI_Bcast(seq_array, seq_surface_size, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
+
+    ierr = DMDAGetCorners(da_Veloc, &si, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
+    ierr = DMSwarmGetLocalSize(dms_s, &nlocal); CHKERRQ(ierr);
+    ierr = DMSwarmGetField(dms_s, DMSwarmPICField_coor, &bs, NULL, (void**)&array); CHKERRQ(ierr);
+
+    for (j = 0; j < nlocal; j++) {
+        array[2*j] = seq_array[si*dms_s_ppe*2+2*j];
+        array[2*j+1] = seq_array[si*dms_s_ppe*2+2*j+1];
+    }
+
+    ierr = DMSwarmRestoreField(dms_s, DMSwarmPICField_coor, &bs, NULL, (void **)&array); CHKERRQ(ierr);
+    ierr = VecRestoreArray(seq_surface, &seq_array); CHKERRQ(ierr);
+
 
     PetscFunctionReturn(0);
 }

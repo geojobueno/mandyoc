@@ -1093,6 +1093,9 @@ SP_Mode sp_mode_from_string(const char* str) {
 	if (strcmp(str, "sedimentation_only") == 0) {
         return SP_SEDIMENTATION_ONLY;
     }
+	if (strcmp(str, "sedimentation_rate_limited") == 0) {
+        return SP_SEDIMENTATION_RATE_LIMITED;
+    }
 	if (strcmp(str, "diffusion_sedimentation_only") == 0) {
         return SP_DIFFUSION_SEDIMENTATION_ONLY;
     }
@@ -1113,6 +1116,8 @@ const char* sp_mode_to_string(SP_Mode mode) {
 			return "diffusion";
 		case SP_SEDIMENTATION_ONLY:
 			return "sedimentation_only";
+		case SP_SEDIMENTATION_RATE_LIMITED:
+			return "sedimentation_rate_limited";
 		case SP_DIFFUSION_SEDIMENTATION_ONLY:
 			return "diffusion_sedimentation_only";
     }
