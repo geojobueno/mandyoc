@@ -39,6 +39,12 @@ extern Vec Veloc_weight;
 
 extern double seg_per_ano;
 
+extern PetscReal *sedimentation_rate_time;
+extern PetscReal *sedimentation_rate_value;
+extern PetscInt n_sedimentation_rate;
+extern PetscInt cont_sedimentation_rate;
+extern PetscReal sedimentation_rate;
+
 typedef struct {
 	PetscScalar u;
 	PetscScalar w;
@@ -56,6 +62,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_only(PetscReal dt)
 PetscErrorCode sp_evaluate_surface_processes_2d_diffusion_sedimentation_only(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties();
+PetscErrorCode sp_update_sedimentation_rate(double time);
 PetscErrorCode DMLocatePoints_DMDARegular_2d(DM dm,Vec pos,DMPointLocationType ltype, PetscSF cellSF);
 PetscErrorCode DMGetNeighbors_DMDARegular_2d(DM dm,PetscInt *nneighbors,const PetscMPIInt **neighbors);
 PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
@@ -671,31 +678,19 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
 
     PetscReal hsl = sp_evaluate_adjusted_mean_elevation_with_sea_level();
 
-    PetscReal sedimentation_rate = 50.0; //m^2/year
     PetscReal sed_per_dt = sedimentation_rate * dt/seg_per_ano; // m^2
     PetscReal sed_aux, diff_h;
     PetscReal dx_sed = seq_array[2*1]-seq_array[2*0];
     PetscReal sed_sum = sed_per_dt/dx_sed; // m (cumulative sedimentation per dx_sed)
 
-    
 
     if (!rank) {
-        //printf("rank = %d\n",rank);
-        //printf("dt = %lf\n",dt);
-        //printf("dt/seg_per_ano = %lf\n",dt/seg_per_ano);
-        //printf("sed_per_dt = %lf\n",sed_per_dt);
-        //printf("dx_sed = %lf\n",dx_sed);
-        //printf("sed_sum = %lf\n",sed_sum);
-        //printf("sea_level = %lf\n",hsl);
-        //for (i=0;i<n;i++){
-            //printf("%f %f %f\n",sea_level,seq_array[2*i+0],seq_array[2*i+1]);
-        //}
         sed_aux = sed_sum;
-        //left margin 
-        for (i=0;seq_array[2*i+0]<200.0E3;i++); printf("i = %d, n = %d\n",i,n);
+        // left margin
+        for (i=0;seq_array[2*i+0]<200.0E3;i++);
+
         for (j=i;(sed_aux>0)&&(j<n);j++){
             if (seq_array[2*j+1]<hsl){
-                //printf("%d %lf %lf ",j,sed_aux,seq_array[2*j+1]);
                 diff_h = hsl - seq_array[2*j+1];
                 if (diff_h<=sed_aux){
                     seq_array[2*j+1]=hsl;
@@ -705,20 +700,15 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
                     seq_array[2*j+1]+=sed_aux;
                     sed_aux = 0.0;
                 }
-                //printf("%lf\n",seq_array[2*j+1]);
             }
-            //else printf("%d\n",j);
         }
-        //printf("sed_aux = %lf\n",sed_aux);
-
 
         sed_aux = sed_sum;
-        //right margin
-        for (i=n-1;seq_array[2*i+0]>seq_array[2*(n-1)+0]-200.0E3;i--); printf("i = %d, n = %d\n",i,n);
-        
+        // right margin
+        for (i=n-1;seq_array[2*i+0]>seq_array[2*(n-1)+0]-200.0E3;i--);
+
         for (j=i;(sed_aux>0)&&(j>0);j--){
             if (seq_array[2*j+1]<hsl){
-                //printf("%d %lf\n",j,sed_aux);
                 diff_h = hsl - seq_array[2*j+1];
                 if (diff_h<=sed_aux){
                     seq_array[2*j+1]=hsl;
@@ -730,11 +720,6 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
                 }
             }
         }
-
-        /*for (j=0;j<n;j++){
-            
-        }*/
-        
     }
 
     ierr = MPI_Bcast(&seq_surface_size, 1, MPI_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
@@ -967,6 +952,19 @@ PetscErrorCode sp_update_surface_swarm_particles_properties()
     pcoords = NULL;
 
     ierr = DMSwarmMigrate(dms, PETSC_TRUE); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode sp_update_sedimentation_rate(double time)
+{
+    PetscFunctionBeginUser;
+
+    if (cont_sedimentation_rate < n_sedimentation_rate && time > 1.0E6*sedimentation_rate_time[cont_sedimentation_rate]) {
+        sedimentation_rate = sedimentation_rate_value[cont_sedimentation_rate];
+
+        cont_sedimentation_rate++;
+	}
 
     PetscFunctionReturn(0);
 }

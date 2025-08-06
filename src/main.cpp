@@ -57,6 +57,7 @@ PetscErrorCode sp_move_surface_swarm(PetscInt dimensions, PetscReal dt);
 PetscErrorCode sp_surface_swarm_interpolation();
 PetscErrorCode sp_evaluate_surface_processes(PetscInt dimensions, PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties();
+PetscErrorCode sp_update_sedimentation_rate(double time);
 PetscErrorCode sp_destroy();
 PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
 PetscErrorCode validate_sp_mode_combination(PetscBool sp_enabled, SP_Mode mode);
@@ -277,6 +278,10 @@ int main(int argc,char **args)
 		if (dimensions == 2) {
 			ierr = rescaleVeloc(Veloc_fut,tempo);
 			ierr = multi_veloc_change(Veloc_fut,tempo);
+		}
+
+		if (dimensions == 2 && sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {
+			ierr = sp_update_sedimentation_rate(tempo);
 		}
 
 		ierr = build_thermal(dimensions);CHKERRQ(ierr);

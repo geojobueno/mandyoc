@@ -144,6 +144,10 @@ extern PetscScalar *var_bcv_time;
 extern PetscScalar *var_bcv_scale;
 extern PetscInt n_var_bcv;
 
+extern PetscReal *sedimentation_rate_time;
+extern PetscReal *sedimentation_rate_value;
+extern PetscInt n_sedimentation_rate;
+
 extern PetscInt variable_climate;
 
 extern PetscScalar *var_climate_time;
@@ -984,6 +988,41 @@ PetscErrorCode reader(int rank, const char fName[]){
 			printf("\n");
 		}
 		MPI_Bcast(mv_time,n_mv,MPIU_SCALAR,0,PETSC_COMM_WORLD);
+	}
+
+	// SP_Mode SP_SEDIMENTATION_RATE_LIMITED
+	if (dimensions == 2 && sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {
+		FILE *f_sedimentation_rate;
+
+		f_sedimentation_rate = fopen("sedimentation_rate.txt", "r");
+
+		if (f_sedimentation_rate == NULL) {
+			PetscPrintf(PETSC_COMM_WORLD, "\n\n\n\sedimentation_rate.txt not found\n\n\n\n");
+			exit(1);
+		}
+
+		if (rank == 0) {
+			fscanf(f_sedimentation_rate, "%d", &n_sedimentation_rate);
+		}
+
+		MPI_Bcast(&n_sedimentation_rate, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		PetscCalloc1(n_sedimentation_rate, &sedimentation_rate_value);
+		PetscCalloc1(n_sedimentation_rate, &sedimentation_rate_time);
+
+		if (rank == 0) {
+			PetscPrintf(PETSC_COMM_WORLD, "Variable sedimentation rate\n");
+
+			for (int i = 0; i < n_sedimentation_rate; i++) {
+				fscanf(f_sedimentation_rate, "%lf%lf", &sedimentation_rate_time[i], &sedimentation_rate_value[i]);
+				PetscPrintf(PETSC_COMM_WORLD, "%lf Myr, sedimentation_rate = %lf\n", sedimentation_rate_time[i], sedimentation_rate_value[i]);
+			}
+
+			PetscPrintf(PETSC_COMM_WORLD, "\n\n");
+			fclose(f_sedimentation_rate);
+		}
+
+		MPI_Bcast(sedimentation_rate_time, n_sedimentation_rate, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(sedimentation_rate_value, n_sedimentation_rate, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
 	}
 
 	PetscFunctionReturn(0);
