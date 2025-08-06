@@ -121,7 +121,7 @@ int main(int argc,char **args)
 
 	// TODO: improve log for surface process parameters
 	if (sp_surface_processes == PETSC_TRUE) {
-		ierr = PetscPrintf(PETSC_COMM_WORLD, "sp_mode = \"%s\"\n", sp_mode_to_string(sp_mode)); CHKERRQ(ierr);
+		ierr = PetscPrintf(PETSC_COMM_WORLD, "sp_mode = \"%s\"\n\n", sp_mode_to_string(sp_mode)); CHKERRQ(ierr);
 	}
 
 	if (sp_mode == SP_DIFFUSION) {
