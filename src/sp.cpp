@@ -678,14 +678,101 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
 
     PetscReal hsl = sp_evaluate_adjusted_mean_elevation_with_sea_level();
 
-    PetscReal sed_per_dt = sedimentation_rate * dt/seg_per_ano; // m^2
-    PetscReal sed_aux, diff_h;
-    PetscReal dx_sed = seq_array[2*1]-seq_array[2*0];
-    PetscReal sed_sum = sed_per_dt/dx_sed; // m (cumulative sedimentation per dx_sed)
-
+    
 
     if (!rank) {
-        sed_aux = sed_sum;
+
+        PetscReal sed_per_dt = sedimentation_rate * dt/seg_per_ano; // m^2
+        PetscReal sed_aux, diff_h;
+        PetscReal dx_sed = seq_array[2*1]-seq_array[2*0];
+        PetscReal sed_sum = sed_per_dt/dx_sed; // m (cumulative sedimentation per dx_sed)
+
+        PetscReal continental_slope = 0.06993; // tan(4 degrees)
+        PetscReal test_volume;
+        PetscReal cont_break;
+        PetscReal diff_h_aux;
+        // left margin
+        //printf("sedimentation_rate: %lf\n",sedimentation_rate);
+        for (cont_break=0; cont_break<Lx; cont_break+=dx_sed){
+            test_volume=0.0;
+            for (j=0; j<n; j++){
+                if (seq_array[2*j]<cont_break){
+                    if (seq_array[2*j+1]<hsl){
+                        diff_h =  hsl - seq_array[2*j+1];
+                        test_volume += diff_h * dx_sed;
+                    }
+                }
+                else {
+                    diff_h_aux = hsl-continental_slope*(seq_array[2*j]-cont_break);
+                    if (seq_array[2*j+1]<diff_h_aux){
+                        diff_h = diff_h_aux - seq_array[2*j+1];
+                        test_volume += diff_h * dx_sed;
+                    }
+                }
+            }
+            //printf("%lf %lf\n",test_volume,sed_per_dt);
+            if (test_volume>=sed_per_dt) break;
+        }
+        printf("cont_break = %lf\n\n",cont_break);
+        for (j=0; j<n; j++){
+            if (seq_array[2*j]<cont_break){
+                if (seq_array[2*j+1]<hsl){
+                    //diff_h =  hsl - seq_array[2*j+1];
+                    //seq_array[2*j+1] += diff_h;
+                    seq_array[2*j+1] = hsl;
+                }
+            }
+            else {
+                diff_h_aux = hsl-continental_slope*(seq_array[2*j]-cont_break);
+                if (seq_array[2*j+1]<diff_h_aux){
+                    diff_h = diff_h_aux - seq_array[2*j+1];
+                    seq_array[2*j+1] += diff_h;
+                }
+            }
+        }
+
+        // right margin
+        for (cont_break=Lx; cont_break>0; cont_break-=dx_sed){
+            test_volume=0.0;
+            for (j=0; j<n; j++){
+                if (seq_array[2*j]>cont_break){
+                    if (seq_array[2*j+1]<hsl){
+                        diff_h =  hsl - seq_array[2*j+1];
+                        test_volume += diff_h * dx_sed;
+                    }
+                }
+                else {
+                    diff_h_aux = hsl+continental_slope*(seq_array[2*j]-cont_break);
+                    if (seq_array[2*j+1]<diff_h_aux){
+                        diff_h = diff_h_aux - seq_array[2*j+1];
+                        test_volume += diff_h * dx_sed;
+                    }
+                }
+            }
+            //printf("%lf %lf\n",test_volume,sed_per_dt);
+            if (test_volume>=sed_per_dt) break;
+        }
+        printf("cont_break = %lf\n\n",cont_break);
+        for (j=0; j<n; j++){
+            if (seq_array[2*j]>cont_break){
+                if (seq_array[2*j+1]<hsl){
+                    //diff_h =  hsl - seq_array[2*j+1];
+                    //seq_array[2*j+1] += diff_h;
+                    seq_array[2*j+1] = hsl;
+                }
+            }
+            else {
+                diff_h_aux = hsl+continental_slope*(seq_array[2*j]-cont_break);
+                if (seq_array[2*j+1]<diff_h_aux){
+                    diff_h = diff_h_aux - seq_array[2*j+1];
+                    seq_array[2*j+1] += diff_h;
+                }
+            }
+        }
+
+
+
+        /*sed_aux = sed_sum;
         // left margin
         for (i=0;seq_array[2*i+0]<200.0E3;i++);
 
@@ -719,7 +806,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
                     sed_aux = 0.0;
                 }
             }
-        }
+        }*/
     }
 
     ierr = MPI_Bcast(&seq_surface_size, 1, MPI_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
