@@ -57,6 +57,7 @@ PetscErrorCode sp_move_surface_swarm(PetscInt dimensions, PetscReal dt);
 PetscErrorCode sp_surface_swarm_interpolation();
 PetscErrorCode sp_evaluate_surface_processes(PetscInt dimensions, PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties();
+PetscErrorCode sp_update_active_sediment_layer(double time);
 PetscErrorCode sp_update_sedimentation_rate(double time);
 PetscErrorCode sp_destroy();
 PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
@@ -278,6 +279,10 @@ int main(int argc,char **args)
 		if (dimensions == 2) {
 			ierr = rescaleVeloc(Veloc_fut,tempo);
 			ierr = multi_veloc_change(Veloc_fut,tempo);
+		}
+
+		if (dimensions == 2 && sp_surface_processes) {
+			ierr = sp_update_active_sediment_layer(tempo);
 		}
 
 		if (dimensions == 2 && sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {

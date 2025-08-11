@@ -390,6 +390,13 @@ DM dms_s;
 PetscInt dms_s_ppe = 2; // dm swarm surface number of particles per element
 PetscInt buffer_s;
 
+// Multiple sediment layer
+PetscReal *sediment_layer_time;
+PetscInt *sediment_layer_id;
+PetscInt n_sediment_layer = 0;
+PetscInt cont_sediment_layer = 0;
+PetscInt active_sediment_layer;
+
 // SP_Mode SP_SEDIMENTATION_RATE_LIMITED
 PetscReal *sedimentation_rate_time;
 PetscReal *sedimentation_rate_value;

@@ -144,6 +144,11 @@ extern PetscScalar *var_bcv_time;
 extern PetscScalar *var_bcv_scale;
 extern PetscInt n_var_bcv;
 
+extern PetscReal *sediment_layer_time;
+extern PetscInt *sediment_layer_id;
+extern PetscInt n_sediment_layer;
+extern PetscInt active_sediment_layer;
+
 extern PetscReal *sedimentation_rate_time;
 extern PetscReal *sedimentation_rate_value;
 extern PetscInt n_sedimentation_rate;
@@ -989,6 +994,48 @@ PetscErrorCode reader(int rank, const char fName[]){
 		}
 		MPI_Bcast(mv_time,n_mv,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 	}
+
+	// Multiple sediment layer
+	if (dimensions == 2 && sp_surface_processes) {
+		PetscInt initial_active_sediment_layer;
+		FILE *f_sediment_layers;
+
+		f_sediment_layers = fopen("sediment_layers.txt", "r");
+
+		if (f_sediment_layers == NULL) {
+			PetscPrintf(PETSC_COMM_WORLD, "\n\n\n\sediment_layers.txt not found\n\n\n\n");
+			exit(1);
+		}
+
+		if (rank == 0) {
+			fscanf(f_sediment_layers, "%d%d", &n_sediment_layer, &initial_active_sediment_layer);
+		}
+
+		active_sediment_layer = initial_active_sediment_layer;
+
+		MPI_Bcast(&n_sediment_layer, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		PetscCalloc1(n_sediment_layer, &sediment_layer_id);
+		PetscCalloc1(n_sediment_layer, &sediment_layer_time);
+
+		if (rank == 0) {
+			PetscPrintf(PETSC_COMM_WORLD, "Multiple sediment layer\n");
+
+			PetscPrintf(PETSC_COMM_WORLD, "%lf Myr, sediment_layer = %d (initial active sediment layer)\n", 0.0, active_sediment_layer);
+
+			for (int i = 0; i < n_sediment_layer; i++) {
+				fscanf(f_sediment_layers, "%lf%d", &sediment_layer_time[i], &sediment_layer_id[i]);
+				PetscPrintf(PETSC_COMM_WORLD, "%lf Myr, sediment_layer = %d\n", sediment_layer_time[i], sediment_layer_id[i]);
+			}
+
+			PetscPrintf(PETSC_COMM_WORLD, "\n\n");
+			fclose(f_sediment_layers);
+		}
+
+		MPI_Bcast(sediment_layer_time, n_sediment_layer, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(sediment_layer_id, n_sediment_layer, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&active_sediment_layer, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	}
+
 
 	// SP_Mode SP_SEDIMENTATION_RATE_LIMITED
 	if (dimensions == 2 && sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {

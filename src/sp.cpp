@@ -39,6 +39,12 @@ extern Vec Veloc_weight;
 
 extern double seg_per_ano;
 
+extern PetscReal *sediment_layer_time;
+extern PetscInt *sediment_layer_id;
+extern PetscInt n_sediment_layer;
+extern PetscInt cont_sediment_layer;
+extern PetscInt active_sediment_layer;
+
 extern PetscReal *sedimentation_rate_time;
 extern PetscReal *sedimentation_rate_value;
 extern PetscInt n_sedimentation_rate;
@@ -62,6 +68,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_only(PetscReal dt)
 PetscErrorCode sp_evaluate_surface_processes_2d_diffusion_sedimentation_only(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties();
+PetscErrorCode sp_update_active_sediment_layer(double time);
 PetscErrorCode sp_update_sedimentation_rate(double time);
 PetscErrorCode DMLocatePoints_DMDARegular_2d(DM dm,Vec pos,DMPointLocationType ltype, PetscSF cellSF);
 PetscErrorCode DMGetNeighbors_DMDARegular_2d(DM dm,PetscInt *nneighbors,const PetscMPIInt **neighbors);
@@ -678,7 +685,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
 
     PetscReal hsl = sp_evaluate_adjusted_mean_elevation_with_sea_level();
 
-    
+
 
     if (!rank) {
 
@@ -1011,11 +1018,11 @@ PetscErrorCode sp_update_surface_swarm_particles_properties()
         // (A2L) air particle bellow the surface => assign land properties
         if (a2l == PETSC_TRUE && layer[p] == n_interfaces) {
             if (py < surface) {
-                layer[p] = n_interfaces - 1;
-                geoq_fac[p] = inter_geoq[n_interfaces - 1];
+                layer[p] = active_sediment_layer;
+                geoq_fac[p] = inter_geoq[active_sediment_layer];
                 strain_fac[p] = 0.0;
 
-                PetscSynchronizedPrintf(PETSC_COMM_WORLD, "[%d] particle updated - a2l - sedimentation | px=%.3e py=%.3e surface=%.3e\n", rank, px, py, surface);
+                PetscSynchronizedPrintf(PETSC_COMM_WORLD, "[%d] particle updated - a2l - sedimentation | px=%.3e py=%.3e surface=%.3e | sed_layer = %d\n", rank, px, py, surface, active_sediment_layer);
             }
         }
 
@@ -1055,6 +1062,20 @@ PetscErrorCode sp_update_sedimentation_rate(double time)
 
     PetscFunctionReturn(0);
 }
+
+PetscErrorCode sp_update_active_sediment_layer(double time)
+{
+    PetscFunctionBeginUser;
+
+    if (cont_sediment_layer < n_sediment_layer && time > 1.0E6*sediment_layer_time[cont_sediment_layer]) {
+        active_sediment_layer = sediment_layer_id[cont_sediment_layer];
+
+        cont_sediment_layer++;
+	}
+
+    PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode sp_view_2d(DM dm, const char prefix[])
 {
