@@ -283,7 +283,7 @@ PetscReal sp_evaluate_adjusted_mean_elevation_with_sea_level()
     PetscErrorCode ierr;
     PetscMPIInt rank;
 
-    PetscReal mean_h = 0.0;
+    PetscReal mean_h;
     PetscInt j;
     PetscInt cont;
     PetscReal hsl; // mean elevation plus sea level height
@@ -295,12 +295,10 @@ PetscReal sp_evaluate_adjusted_mean_elevation_with_sea_level()
     PetscReal *seq_array;
 
 
-    PetscFunctionBeginUser;
-
     ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank); CHKERRQ(ierr);
 
     ierr = DMSwarmCreateGlobalVectorFromField(dms_s, DMSwarmPICField_coor, &global_surface); CHKERRQ(ierr);
-    ierr = VecScatterCreateToAll(global_surface, &ctx, &seq_surface); CHKERRQ(ierr);
+    ierr = VecScatterCreateToZero(global_surface, &ctx, &seq_surface); CHKERRQ(ierr);
     ierr = VecScatterBegin(ctx, global_surface, seq_surface, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterEnd(ctx, global_surface, seq_surface, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecScatterDestroy(&ctx); CHKERRQ(ierr);
@@ -309,19 +307,22 @@ PetscReal sp_evaluate_adjusted_mean_elevation_with_sea_level()
     ierr = VecGetSize(seq_surface, &seq_surface_size); CHKERRQ(ierr);
     ierr = VecGetArray(seq_surface, &seq_array); CHKERRQ(ierr);
 
-    mean_h = 0.0;
+    if (!rank) {
+        mean_h = 0.0;
 
-    for (j = 0, cont = 0; j < seq_surface_size / 2 / 4; j++) {
-        mean_h += seq_array[2 * j + 1];
-        cont++;
+        for (j = 0, cont = 0; j < seq_surface_size / 2 / 4; j++) {
+            mean_h += seq_array[2 * j + 1];
+            cont++;
+        }
+
+        mean_h /= cont;
+
+        hsl = mean_h + sea_level;
     }
 
-    mean_h /= cont;
-
-    hsl = mean_h + sea_level;
+    ierr = MPI_Bcast(&hsl, 1, MPIU_SCALAR, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
 
     ierr = VecRestoreArray(seq_surface, &seq_array); CHKERRQ(ierr);
-    ierr = VecDestroy(&seq_surface); CHKERRQ(ierr);
 
     return hsl;
 }
