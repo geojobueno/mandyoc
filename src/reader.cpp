@@ -99,8 +99,6 @@ extern PetscBool sp_surface_tracking;
 extern PetscBool sp_surface_processes;
 extern PetscReal sp_d_c;
 extern PetscBool set_sp_d_c;
-extern PetscReal Ks;
-extern PetscReal lambda_s;
 extern PetscInt dms_s_ppe;
 extern PetscInt high_kappa_in_asthenosphere;
 extern PetscBool plot_sediment;
@@ -261,8 +259,6 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "sea_level") == 0) {sea_level = atof(tkn_v);}
 			else if (strcmp(tkn_w, "basal_heat") == 0) {basal_heat = atof(tkn_v);}
 			else if (strcmp(tkn_w, "sp_d_c") == 0) {sp_d_c = atof(tkn_v);}
-			else if (strcmp(tkn_w, "sp_Ks") == 0) {Ks = atof(tkn_v);}
-			else if (strcmp(tkn_w, "sp_lambda_s") == 0) {lambda_s = atof(tkn_v);}
 			else if (strcmp(tkn_w, "surface_particles_per_element") == 0) {dms_s_ppe = atoi(tkn_v);}
 			else if (strcmp(tkn_w, "weakening_min") == 0) {weakening_min = atof(tkn_v);}
 			else if (strcmp(tkn_w, "weakening_max") == 0) {weakening_max = atof(tkn_v);}
@@ -487,8 +483,6 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&sp_surface_processes,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&sp_d_c,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&set_sp_d_c,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
-	MPI_Bcast(&Ks,1,MPIU_REAL,0,PETSC_COMM_WORLD);
-	MPI_Bcast(&lambda_s,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&dms_s_ppe,1,MPI_INT,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&plot_sediment,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&a2l,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);

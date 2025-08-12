@@ -26,8 +26,6 @@ extern SP_Mode sp_mode;
 extern PetscScalar sp_d_c;
 extern PetscBool a2l;
 extern PetscScalar sea_level;
-extern PetscReal Ks;
-extern PetscReal lambda_s;
 
 extern DM dmcell_s;
 extern DM dms_s;

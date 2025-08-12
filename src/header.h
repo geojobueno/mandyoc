@@ -403,6 +403,3 @@ PetscReal *sedimentation_rate_value;
 PetscInt n_sedimentation_rate=0;
 PetscInt cont_sedimentation_rate=0;
 PetscReal sedimentation_rate = 0.0;
-
-PetscReal Ks = 1.0e2; // Submarine diffusion coefficient Ks [m2 year-1] // Kaufman et al. (1991)
-PetscReal lambda_s = 5.0e-4; // Submarine diffusion coefficient decay lambda_s [m-1] // // Kaufman et al. (1991)
