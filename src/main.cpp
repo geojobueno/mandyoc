@@ -137,11 +137,6 @@ int main(int argc,char **args)
 	else if (sp_mode == SP_SEDIMENTATION_ONLY) {
 		ierr = PetscPrintf(PETSC_COMM_WORLD, "sea_level = %.3e\n\n", sea_level); CHKERRQ(ierr);
 	}
-	else if (sp_mode == SP_DIFFUSION_SEDIMENTATION_ONLY) {
-		ierr = PetscPrintf(PETSC_COMM_WORLD, "sea_level = %.3e\n", sea_level); CHKERRQ(ierr);
-		ierr = PetscPrintf(PETSC_COMM_WORLD, "Ks = %.3e\n", Ks); CHKERRQ(ierr);
-		ierr = PetscPrintf(PETSC_COMM_WORLD, "lambda_s = %.3e\n\n", lambda_s); CHKERRQ(ierr);
-	}
 
 	// Update elements aux constants
 	if (dimensions == 3) {
