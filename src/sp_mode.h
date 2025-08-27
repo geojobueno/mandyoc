@@ -15,6 +15,7 @@ typedef enum {
     SP_DIFFUSION, // "diffusion"
     SP_SEDIMENTATION_ONLY, // "sedimentation_only"
     SP_SEDIMENTATION_RATE_LIMITED, // "sedimentation_rate_limited"
+    SP_STREAM_POWER_PLUS_SEDIMENTATION_RATE_LIMITED, // "stream_power_plus_sedimentation_rate_limited"
 } SP_Mode;
 
 // Conversion functions
@@ -26,6 +27,7 @@ static const char* valid_modes[] = {
     "\"diffusion\"          - Simple diffusion (requires sp_d_c)",
     "\"sedimentation_only\" - Only sedimentation below height adjusted by sea level (requires sea_level)",
     "\"sedimentation_rate_limited\" - Fixed sedimentation rate on both margins under the sea level",
+    "\"stream_power_plus_sedimentation_rate_limited\" - Stream power plus fixed sedimentation rate on both margins under the sea level",
     NULL  // Terminator
 };
 

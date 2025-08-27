@@ -64,6 +64,8 @@ PetscErrorCode sp_evaluate_surface_processes_2d(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_diffusion(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_only(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(PetscReal dt);
+PetscErrorCode sp_evaluate_surface_processes_2d_stream_power(PetscReal dt);
+PetscErrorCode sp_evaluate_surface_processes_2d_stream_power_plus_sedimentation_rate_limited(PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties();
 PetscErrorCode sp_update_active_sediment_layer(double time);
 PetscErrorCode sp_update_sedimentation_rate(double time);
@@ -504,6 +506,9 @@ PetscErrorCode sp_evaluate_surface_processes_2d(PetscReal dt)
     else if (sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {
         ierr = sp_evaluate_surface_processes_2d_sedimentation_rate_limited(dt); CHKERRQ(ierr);
     }
+    else if (sp_mode == SP_STREAM_POWER_PLUS_SEDIMENTATION_RATE_LIMITED) {
+        ierr = sp_evaluate_surface_processes_2d_stream_power_plus_sedimentation_rate_limited(dt); CHKERRQ(ierr);
+    }
 
     PetscFunctionReturn(0);
 }
@@ -830,6 +835,33 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
     ierr = DMSwarmRestoreField(dms_s, DMSwarmPICField_coor, &bs, NULL, (void **)&array); CHKERRQ(ierr);
     ierr = VecRestoreArray(seq_surface, &seq_array); CHKERRQ(ierr);
 
+
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode sp_evaluate_surface_processes_2d_stream_power(PetscReal dt)
+{
+    PetscMPIInt rank;
+    PetscErrorCode ierr;
+
+    PetscFunctionBeginUser;
+
+    ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank); CHKERRQ(ierr);
+
+    // todo: implement erosion
+
+    PetscFunctionReturn(0);
+}
+
+PetscErrorCode sp_evaluate_surface_processes_2d_stream_power_plus_sedimentation_rate_limited(PetscReal dt)
+{
+    PetscErrorCode ierr;
+
+    // erosion
+    ierr = sp_evaluate_surface_processes_2d_stream_power(dt); CHKERRQ(ierr);
+
+    // sedimentation
+    ierr = sp_evaluate_surface_processes_2d_sedimentation_rate_limited(dt); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
 }
