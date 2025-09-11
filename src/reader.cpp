@@ -803,7 +803,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 		}
 
 		// Copy <str> to the firts value of <interfaces> and read the rest of that line
-		interfaces[0] = atof(str);
+		interfaces[0] = atof(str) / h0_scaled;
 		for (PetscInt j = 1; j < n_interfaces; j++)
 		{
 			fscanf(f_interfaces, "%lf", &interfaces[j * Nx]);
