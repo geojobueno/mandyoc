@@ -386,6 +386,11 @@ PetscBool export_kappa = PETSC_FALSE;
 
 PetscBool export_lithology = PETSC_FALSE;
 
+PetscBool winkler = PETSC_FALSE;
+
+PetscReal Basal_Pressure0;
+PetscReal Basal_Pressure;
+
 // surface processes
 DM dmcell_s;
 DM dms_s;

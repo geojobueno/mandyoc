@@ -272,6 +272,67 @@ PetscErrorCode shift_pressure_2d() //necessary if the surface pressure is not cl
 
 }
 
+PetscReal calc_mean_basal_pressure_2d()
+{
+	Stokes2d					**pp;
+	PetscScalar				**pp_aux;
+
+
+	PetscErrorCode         ierr;
+
+
+	//get Pressure array
+	ierr = DMGlobalToLocalBegin(da_Veloc,Pressure,INSERT_VALUES,local_P);
+	ierr = DMGlobalToLocalEnd(  da_Veloc,Pressure,INSERT_VALUES,local_P);
+	ierr = DMDAVecGetArray(da_Veloc,local_P,&pp);CHKERRQ(ierr);
+
+	//get Pressure_aux array
+	ierr = DMGlobalToLocalBegin(da_Thermal,Pressure_aux,INSERT_VALUES,local_P_aux);
+	ierr = DMGlobalToLocalEnd(  da_Thermal,Pressure_aux,INSERT_VALUES,local_P_aux);
+	ierr = DMDAVecGetArray(da_Thermal,local_P_aux,&pp_aux);CHKERRQ(ierr);
+
+	PetscInt       sx,sz,mmx,mmz;
+	PetscInt i,k;
+
+	ierr = DMDAGetCorners(da_Thermal,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
+
+	int cont_pressure = 0, cont_pressure_all;
+    float pressure_basal = 0.0, pressure_basal_all;
+
+    for (k=sz; k<sz+mmz; k++) {
+        for (i=sx; i<sx+mmx; i++) {
+            if (k==0){
+                pressure_basal+=pp_aux[k][i];
+                cont_pressure++;
+            }
+        }
+    }
+
+
+	//restore Pressure_aux
+	ierr = DMDAVecRestoreArray(da_Thermal,local_P_aux,&pp_aux);CHKERRQ(ierr);
+	ierr = DMLocalToGlobalBegin(da_Thermal,local_P_aux,INSERT_VALUES,Pressure_aux);CHKERRQ(ierr);
+	ierr = DMLocalToGlobalEnd(da_Thermal,local_P_aux,INSERT_VALUES,Pressure_aux);CHKERRQ(ierr);
+
+	MPI_Allreduce(&cont_pressure,&cont_pressure_all,1,MPI_INT,MPI_SUM,PETSC_COMM_WORLD);
+    MPI_Allreduce(&pressure_basal,&pressure_basal_all,1,MPI_FLOAT,MPI_SUM,PETSC_COMM_WORLD);
+
+	PetscReal pressure_mean;
+
+	pressure_mean = pressure_basal_all/cont_pressure_all;
+
+	PetscPrintf(PETSC_COMM_WORLD,"Basal Pressure: %lg\n",pressure_mean);
+
+
+	//restore Pressure
+	ierr = DMDAVecRestoreArray(da_Veloc,local_P,&pp);CHKERRQ(ierr);
+	ierr = DMLocalToGlobalBegin(da_Veloc,local_P,INSERT_VALUES,Pressure);CHKERRQ(ierr);
+	ierr = DMLocalToGlobalEnd(da_Veloc,local_P,INSERT_VALUES,Pressure);CHKERRQ(ierr);
+
+
+	return pressure_mean;
+}
+
 PetscErrorCode calc_pressure_3d()
 {
 	Stokes3d					***pp;

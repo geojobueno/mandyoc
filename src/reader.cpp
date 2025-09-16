@@ -105,6 +105,7 @@ extern PetscBool plot_sediment;
 extern PetscBool a2l;
 extern PetscBool export_kappa;
 extern PetscBool export_lithology;
+extern PetscBool winkler;
 
 // Removed from parameter file
 extern double H_lito;
@@ -319,6 +320,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 
 			else if (strcmp(tkn_w, "export_lithology") == 0) {export_lithology = check_a_b_bool(tkn_w, tkn_v, "True", "False");}
 
+			else if (strcmp(tkn_w, "winkler") == 0) {winkler = check_a_b_bool(tkn_w, tkn_v, "True", "False");}
+
 			else if (strcmp(tkn_w, "high_kappa_in_asthenosphere") == 0) {high_kappa_in_asthenosphere = check_a_b(tkn_w, tkn_v, "True", "False");}
 
 			else if (strcmp(tkn_w, "nondimensionalization") == 0) {non_dim = check_a_b(tkn_w, tkn_v, "True", "False");}
@@ -495,6 +498,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&export_kappa,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
 
 	MPI_Bcast(&export_lithology,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
+
+	MPI_Bcast(&winkler,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
 
 	MPI_Bcast(&non_dim,1,MPI_INT,0,PETSC_COMM_WORLD);
 
