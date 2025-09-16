@@ -128,6 +128,11 @@ extern PetscInt periodic_boundary;
 
 extern PetscReal veloc0_scaled;
 
+extern PetscReal Basal_Pressure0;
+extern PetscReal Basal_Pressure;
+
+extern PetscReal RHOM; //!!! Change to the density of the deepest layer
+
 PetscErrorCode AssembleA_Veloc_2d(Mat A,Mat AG,DM veloc_da, DM temper_da){
 
 	PetscErrorCode         ierr;
@@ -631,6 +636,52 @@ PetscErrorCode AssembleF_Veloc_2d(Vec F,DM veloc_da,DM drho_da,Vec FP){
 
 
 	PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode calc_winkler(DM veloc_da){
+	Stokes2d					**VV;
+
+	PetscInt               M,P;
+	PetscErrorCode         ierr;
+
+	PetscInt               sex,sez,mx,mz;
+	PetscInt               ei,ek;
+
+	PetscInt i,k;
+
+
+	PetscFunctionBeginUser;
+	ierr = DMDAGetInfo(veloc_da,0,&M,&P,NULL,0,0,0, 0,0,0,0,0,0);CHKERRQ(ierr);
+
+
+	ierr = VecZeroEntries(local_V);CHKERRQ(ierr);
+
+	ierr = DMGlobalToLocalBegin(veloc_da,Veloc,INSERT_VALUES,local_V);
+	ierr = DMGlobalToLocalEnd(  veloc_da,Veloc,INSERT_VALUES,local_V);
+
+	ierr = DMDAVecGetArray(veloc_da,local_V,&VV);CHKERRQ(ierr);
+
+	PetscInt       sx,sz,mmx,mmz;
+
+	ierr = DMDAGetCorners(veloc_da,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
+
+	for (k=sz; k<sz+mmz; k++) {
+		for (i=sx; i<sx+mmx; i++) {
+
+			if (k==0 || k==Nz-1){
+				VV[k][i].w=(Basal_Pressure0-Basal_Pressure)/(RHOM*gravity*dt_calor_sec);
+			}
+
+		}
+	}
+
+	ierr = DMDAVecRestoreArray(veloc_da,local_V,&VV);CHKERRQ(ierr);
+	ierr = DMLocalToGlobalBegin(veloc_da,local_V,INSERT_VALUES,Veloc);CHKERRQ(ierr);
+	ierr = DMLocalToGlobalEnd(veloc_da,local_V,INSERT_VALUES,Veloc);CHKERRQ(ierr);
+
+	PetscFunctionReturn(0);
+
 }
 
 PetscErrorCode AssembleA_Veloc_3d(Mat A,Mat AG,DM veloc_da, DM temper_da){
