@@ -388,8 +388,8 @@ PetscBool export_lithology = PETSC_FALSE;
 
 PetscBool winkler = PETSC_FALSE;
 
-PetscReal Basal_Pressure0;
-PetscReal Basal_Pressure;
+PetscReal Basal_Pressure0 = 0.0;
+PetscReal Basal_Pressure = 0.0;
 
 // surface processes
 DM dmcell_s;
