@@ -405,3 +405,11 @@ PetscReal *sedimentation_rate_value;
 PetscInt n_sedimentation_rate=0;
 PetscInt cont_sedimentation_rate=0;
 PetscReal sedimentation_rate = 0.0;
+
+// Variable base level
+PetscInt variable_baselevel = 0;
+PetscReal *var_bl_time;
+PetscReal *var_bl_value;
+PetscInt n_var_bl=0;
+PetscInt cont_bl_value=0;
+// Sea level is defined above
