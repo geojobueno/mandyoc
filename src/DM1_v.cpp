@@ -130,6 +130,7 @@ extern PetscReal veloc0_scaled;
 
 extern PetscReal Basal_Pressure0;
 extern PetscReal Basal_Pressure;
+extern PetscReal basal_velocity_previous;
 
 extern PetscReal RHOM; //!!! Change to the density of the deepest layer
 
@@ -639,7 +640,7 @@ PetscErrorCode AssembleF_Veloc_2d(Vec F,DM veloc_da,DM drho_da,Vec FP){
 }
 
 
-PetscErrorCode calc_winkler(DM veloc_da){
+PetscErrorCode calc_winkler(){
 	Stokes2d					**VV;
 
 	PetscInt               M,P;
@@ -652,33 +653,40 @@ PetscErrorCode calc_winkler(DM veloc_da){
 
 
 	PetscFunctionBeginUser;
-	ierr = DMDAGetInfo(veloc_da,0,&M,&P,NULL,0,0,0, 0,0,0,0,0,0);CHKERRQ(ierr);
+	ierr = DMDAGetInfo(da_Veloc,0,&M,&P,NULL,0,0,0, 0,0,0,0,0,0);CHKERRQ(ierr);
 
 
 	ierr = VecZeroEntries(local_V);CHKERRQ(ierr);
 
-	ierr = DMGlobalToLocalBegin(veloc_da,Veloc,INSERT_VALUES,local_V);
-	ierr = DMGlobalToLocalEnd(  veloc_da,Veloc,INSERT_VALUES,local_V);
+	ierr = DMGlobalToLocalBegin(da_Veloc,Veloc_0,INSERT_VALUES,local_V);
+	ierr = DMGlobalToLocalEnd(  da_Veloc,Veloc_0,INSERT_VALUES,local_V);
 
-	ierr = DMDAVecGetArray(veloc_da,local_V,&VV);CHKERRQ(ierr);
+	ierr = DMDAVecGetArray(da_Veloc,local_V,&VV);CHKERRQ(ierr);
 
 	PetscInt       sx,sz,mmx,mmz;
 
-	ierr = DMDAGetCorners(veloc_da,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
+	ierr = DMDAGetCorners(da_Veloc,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
+
+	PetscReal basal_velocity;
+	if (dt_calor_sec>0) basal_velocity = 0.5*(Basal_Pressure0-Basal_Pressure)/(RHOM*gravity*dt_calor_sec); // 50% percent of the pressure adjustment
+	else basal_velocity = 0.0;
 
 	for (k=sz; k<sz+mmz; k++) {
 		for (i=sx; i<sx+mmx; i++) {
 
 			if (k==0 || k==Nz-1){
-				VV[k][i].w=(Basal_Pressure0-Basal_Pressure)/(RHOM*gravity*dt_calor_sec);
+				VV[k][i].w+=basal_velocity-basal_velocity_previous;
 			}
 
 		}
 	}
+	PetscPrintf(PETSC_COMM_WORLD,"\nWinkler_velocity: %lg\n",basal_velocity);
 
-	ierr = DMDAVecRestoreArray(veloc_da,local_V,&VV);CHKERRQ(ierr);
-	ierr = DMLocalToGlobalBegin(veloc_da,local_V,INSERT_VALUES,Veloc);CHKERRQ(ierr);
-	ierr = DMLocalToGlobalEnd(veloc_da,local_V,INSERT_VALUES,Veloc);CHKERRQ(ierr);
+	basal_velocity_previous = basal_velocity;
+
+	ierr = DMDAVecRestoreArray(da_Veloc,local_V,&VV);CHKERRQ(ierr);
+	ierr = DMLocalToGlobalBegin(da_Veloc,local_V,INSERT_VALUES,Veloc_0);CHKERRQ(ierr);
+	ierr = DMLocalToGlobalEnd(da_Veloc,local_V,INSERT_VALUES,Veloc_0);CHKERRQ(ierr);
 
 	PetscFunctionReturn(0);
 

@@ -66,6 +66,11 @@ PetscErrorCode validate_sp_mode_combination(PetscBool sp_enabled, SP_Mode mode);
 
 PetscReal calc_mean_basal_pressure_2d();
 
+
+PetscReal calc_mean_basal_pressure_2d();
+PetscErrorCode calc_winkler();
+
+
 int main(int argc,char **args)
 {
 	PetscErrorCode ierr;
@@ -250,7 +255,8 @@ int main(int argc,char **args)
 	}
 
 	if (dimensions == 2 && winkler==PETSC_TRUE){
-		Basal_Pressure0 = calc_mean_basal_pressure_2d(); ///!!! Not yet implementer for 3D
+		Basal_Pressure0 = calc_mean_basal_pressure_2d(); ///!!! Not yet implemented for 3D
+		Basal_Pressure = Basal_Pressure0;
 	}
 
 	VecCopy(Veloc_fut,Veloc);
@@ -292,15 +298,16 @@ int main(int argc,char **args)
 			ierr = sp_update_sedimentation_rate(tempo);
 		}
 
-		if (dimensions == 2 && winkler==PETSC_TRUE){
-			Basal_Pressure = calc_mean_basal_pressure_2d(); ///!!! Not yet implementer for 3D
-		}
-
 		ierr = build_thermal(dimensions);CHKERRQ(ierr);
 
 		ierr = solve_thermal(dimensions);CHKERRQ(ierr);
 
 		ierr = veloc_total(dimensions); CHKERRQ(ierr);
+
+		if (dimensions == 2 && winkler==PETSC_TRUE){
+			Basal_Pressure = calc_mean_basal_pressure_2d(); ///!!! Not yet implemented for 3D
+			calc_winkler(); ///!!! Not yet implemented for 3D
+		}
 
 		if (geoq_on){
 			if (RK4==1){
