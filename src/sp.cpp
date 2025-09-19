@@ -49,6 +49,13 @@ extern PetscInt n_sedimentation_rate;
 extern PetscInt cont_sedimentation_rate;
 extern PetscReal sedimentation_rate;
 
+//variable base level
+extern PetscInt variable_baselevel;
+extern PetscReal *var_bl_time;
+extern PetscReal *var_bl_value;
+extern PetscInt n_var_bl;
+extern PetscInt cont_bl_level;
+
 typedef struct {
 	PetscScalar u;
 	PetscScalar w;
@@ -67,6 +74,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
 PetscErrorCode sp_update_surface_swarm_particles_properties();
 PetscErrorCode sp_update_active_sediment_layer(double time);
 PetscErrorCode sp_update_sedimentation_rate(double time);
+PetscErrorCode sp_update_sea_level(double time);
 PetscErrorCode DMLocatePoints_DMDARegular_2d(DM dm,Vec pos,DMPointLocationType ltype, PetscSF cellSF);
 PetscErrorCode DMGetNeighbors_DMDARegular_2d(DM dm,PetscInt *nneighbors,const PetscMPIInt **neighbors);
 PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
@@ -313,7 +321,6 @@ PetscReal sp_evaluate_adjusted_mean_elevation_with_sea_level()
         }
 
         mean_h /= cont;
-
         hsl = mean_h + sea_level;
     }
 
@@ -968,6 +975,17 @@ PetscErrorCode sp_update_active_sediment_layer(double time)
     PetscFunctionReturn(0);
 }
 
+PetscErrorCode sp_update_sea_level(double time)
+{
+    PetscFunctionBeginUser;
+
+    if (cont_bl_level < n_var_bl && time > 1.0E6*var_bl_time[cont_bl_level]) {
+        sea_level = var_bl_value[cont_bl_level];
+
+        cont_bl_level++;
+    }
+    PetscFunctionReturn(0);
+}
 
 PetscErrorCode sp_view_2d(DM dm, const char prefix[])
 {

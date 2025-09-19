@@ -411,5 +411,5 @@ PetscInt variable_baselevel = 0;
 PetscReal *var_bl_time;
 PetscReal *var_bl_value;
 PetscInt n_var_bl=0;
-PetscInt cont_bl_value=0;
+PetscInt cont_bl_level=0;
 // Sea level is defined above

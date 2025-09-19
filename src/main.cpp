@@ -60,6 +60,7 @@ PetscErrorCode sp_evaluate_surface_processes(PetscInt dimensions, PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties();
 PetscErrorCode sp_update_active_sediment_layer(double time);
 PetscErrorCode sp_update_sedimentation_rate(double time);
+PetscErrorCode sp_update_sea_level(double time);
 PetscErrorCode sp_destroy();
 PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
 PetscErrorCode validate_sp_mode_combination(PetscBool sp_enabled, SP_Mode mode);
@@ -283,7 +284,9 @@ int main(int argc,char **args)
 		}
 
 		if (dimensions == 2 && sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {
+			ierr = sp_update_sea_level(tempo);
 			ierr = sp_update_sedimentation_rate(tempo);
+			printf("time = %.3g Myr, sea_level = %.3g km, sedimentation_rate = %.3g mm/yr, active_sediment_layer = %d\n", tempo*1.0E6, sea_level, sedimentation_rate, active_sediment_layer);
 		}
 
 		ierr = build_thermal(dimensions);CHKERRQ(ierr);

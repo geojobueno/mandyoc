@@ -109,7 +109,6 @@ extern PetscInt variable_baselevel; // variable base level
 extern PetscReal *var_bl_time;
 extern PetscReal *var_bl_value;
 extern PetscInt n_var_bl;
-extern PetscInt cont_baselevel_value;
 
 // Removed from parameter file
 extern double H_lito;
