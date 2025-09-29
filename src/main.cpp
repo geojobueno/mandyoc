@@ -286,7 +286,7 @@ int main(int argc,char **args)
 		if (dimensions == 2 && sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {
 			ierr = sp_update_sea_level(tempo);
 			ierr = sp_update_sedimentation_rate(tempo);
-			printf("time = %.3g Myr, sea_level = %.3g km, sedimentation_rate = %.3g mm/yr, active_sediment_layer = %d\n", tempo*1.0E6, sea_level, sedimentation_rate, active_sediment_layer);
+			PetscPrintf(PETSC_COMM_WORLD,"time = %.3g Myr, sea_level = %.3g km, sedimentation_rate = %.3g km^2/yr, active_sediment_layer = %d\n", tempo, sea_level, sedimentation_rate, active_sediment_layer);
 		}
 
 		ierr = build_thermal(dimensions);CHKERRQ(ierr);
