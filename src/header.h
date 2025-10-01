@@ -406,10 +406,14 @@ PetscInt n_sedimentation_rate=0;
 PetscInt cont_sedimentation_rate=0;
 PetscReal sedimentation_rate = 0.0;
 
-// Variable base level
+// Variable base level - Joao Bueno development
 PetscInt variable_baselevel = 0;
 PetscReal *var_bl_time;
 PetscReal *var_bl_value;
 PetscInt n_var_bl=0;
 PetscInt cont_bl_level=0;
 // Sea level is defined above
+
+// --DEBUG-- Sedimentation parameters
+PetscReal continental_slope = 2; // in degrees
+PerscReal strain_sed = 0.6; // 0-1, 0:no strain accumulated in sediment layer, 1:full strain softening in sediment layer
