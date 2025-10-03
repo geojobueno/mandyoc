@@ -110,6 +110,10 @@ extern PetscReal *var_bl_time;
 extern PetscReal *var_bl_value;
 extern PetscInt n_var_bl;
 
+//DEBUG SED PARAMETERS
+extern PetscReal continental_slope;
+extern PetscReal strain_sed;
+
 // Removed from parameter file
 extern double H_lito;
 extern double beta_max;
@@ -267,7 +271,9 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "surface_particles_per_element") == 0) {dms_s_ppe = atoi(tkn_v);}
 			else if (strcmp(tkn_w, "weakening_min") == 0) {weakening_min = atof(tkn_v);}
 			else if (strcmp(tkn_w, "weakening_max") == 0) {weakening_max = atof(tkn_v);}
-
+			//DEBUG SED PARAMETERS
+			else if (strcmp(tkn_w, "continental_slope") ==0) {continental_slope = atof(tkn_v);} 
+			else if (strcmp(tkn_w, "strain_sed") ==0) {strain_sed = atof(tkn_v);} 
 			// String parameters
 			else if (strcmp(tkn_w, "sp_mode") == 0) {sp_mode = sp_mode_from_string(tkn_v);}
 
@@ -502,7 +508,11 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&export_lithology,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
 
 	MPI_Bcast(&non_dim,1,MPI_INT,0,PETSC_COMM_WORLD);
+	//DEBUG SED PARAMETERS
 	MPI_Bcast(&variable_baselevel,1,MPI_INT,0,PETSC_COMM_WORLD);
+	MPI_Bcast(&continental_slope,1,MPIU_REAL,0,PETSC_COMM_WORLD); 
+	MPI_Bcast(&strain_sed,1,MPIU_REAL,0,PETSC_COMM_WORLD);
+
 
 	if (pressure_in_rheol == 0 && h_air < 0.0) {
 		PetscPrintf(PETSC_COMM_WORLD, "Specify the thickness of the air layer with the flag -h_air\n");
@@ -1101,6 +1111,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 		MPI_Bcast(var_bl_time,n_var_bl,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 		MPI_Bcast(var_bl_value,n_var_bl,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 	}
+
+	continental_slope = tan(continental_slope * PETSC_PI / 180.0); //Update the continental slope in degrees to its tangent value
 
 	PetscFunctionReturn(0);
 

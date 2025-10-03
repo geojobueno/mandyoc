@@ -415,5 +415,5 @@ PetscInt cont_bl_level=0;
 // Sea level is defined above
 
 // --DEBUG-- Sedimentation parameters
-PetscReal continental_slope = 2; // in degrees
+PetscReal continental_slope = 2; // in degrees, but it will be converted to its tangent
 PerscReal strain_sed = 0.6; // 0-1, 0:no strain accumulated in sediment layer, 1:full strain softening in sediment layer

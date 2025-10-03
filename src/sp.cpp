@@ -56,6 +56,10 @@ extern PetscReal *var_bl_value;
 extern PetscInt n_var_bl;
 extern PetscInt cont_bl_level;
 
+//DEBUG SED PARAMETERS
+extern PetscReal continental_slope;
+extern PetscReal strain_sed;
+
 typedef struct {
 	PetscScalar u;
 	PetscScalar w;
@@ -696,7 +700,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
         PetscReal dx_sed = seq_array[2*1]-seq_array[2*0];
         PetscReal sed_sum = sed_per_dt/dx_sed; // m (cumulative sedimentation per dx_sed)
 
-        PetscReal continental_slope = 0.06993; // tan(4 degrees)
+        //PetscReal continental_slope = 0.06993; // tan(4 degrees)
         PetscReal test_volume;
         PetscReal cont_break;
         PetscReal diff_h_aux;
@@ -919,9 +923,9 @@ PetscErrorCode sp_update_surface_swarm_particles_properties()
             if (py < surface) {
                 layer[p] = active_sediment_layer;
                 geoq_fac[p] = inter_geoq[active_sediment_layer];
-                strain_fac[p] = 0.0;
+                strain_fac[p] = strain_sed;
 
-                PetscSynchronizedPrintf(PETSC_COMM_WORLD, "[%d] particle updated - a2l - sedimentation | px=%.3e py=%.3e surface=%.3e | sed_layer = %d\n", rank, px, py, surface, active_sediment_layer);
+                PetscSynchronizedPrintf(PETSC_COMM_WORLD, "[%d] particle updated - a2l - sedimentation | px=%.3e py=%.3e surface=%.3e | sed_layer = %d\n | strain = %.2f", rank, px, py, surface, active_sediment_layer,strain_sed);
             }
         }
 
