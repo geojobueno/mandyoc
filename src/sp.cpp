@@ -824,10 +824,6 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
         }*/
     }
 
-    if (aggradation_rate > 0.0) {
-        ierr = sp_aggradation_surface_2d(dt, n, hsl, seq_array); CHKERRQ(ierr);
-    }
-
     ierr = MPI_Bcast(&seq_surface_size, 1, MPI_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
 
     if (rank) {
@@ -848,62 +844,6 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
     ierr = VecRestoreArray(seq_surface, &seq_array); CHKERRQ(ierr);
 
 
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode sp_aggradation_surface_2d(PetscReal dt, PetscInt n, PetscReal hsl, PetscReal *seq_array){
-    PetscErrorCode ierr;
-    PetscInt j;
-
-    PetscFunctionBeginUser;
-
-    //calculate the total aggradation (vertical sedimentation) in m, for this timestep
-    PetscReal aggradation_amount = aggradation_rate * dt / seg_per_ano; // m/y * s / (s/y)
-
-    // Create a temporary copy of the surface to work with
-    PetscReal *temp_surface;
-    ierr = PetscCalloc1(n, &temp_surface); CHKERRQ(ierr);
-    for (j = 0; j < n; j++) {
-        temp_surface[j] = seq_array[2*j+1];
-    }
-
-    // The target elevation is the current elevation plus the aggradation for this step
-    for (j = 0; j < n; j++) {
-        temp_surface[j] += aggradation_amount;
-    }
-
-    // Iteratively fill basins until the surface is stable
-    PetscBool surface_changed;
-    do {
-        surface_changed = PETSC_FALSE;
-        // Pass 1: From left to right
-        for (j = 1; j < n; j++) {
-            PetscReal new_elevation = PetscMin(temp_surface[j], temp_surface[j-1]);
-            if (new_elevation < temp_surface[j]) {
-                temp_surface[j] = new_elevation;
-                surface_changed = PETSC_TRUE;
-            }
-        }
-        // Pass 2: From right to left
-        for (j = n - 2; j >= 0; j--) {
-            PetscReal new_elevation = PetscMin(temp_surface[j], temp_surface[j+1]);
-            if (new_elevation < temp_surface[j]) {
-                temp_surface[j] = new_elevation;
-                surface_changed = PETSC_TRUE;
-            }
-        }
-    } while (surface_changed == PETSC_TRUE);
-
-    // Apply the changes, ensuring we respect the base level
-    for (j = 0; j < n; j++) {
-        // The new surface is the higher of the original surface and the filled surface
-        PetscReal new_elevation = PetscMax(seq_array[2*j+1], temp_surface[j]);
-        // The final elevation cannot be higher than the base level
-        seq_array[2*j+1] = PetscMin(new_elevation, hsl);
-    }
-
-    ierr = PetscFree(temp_surface); CHKERRQ(ierr);
-    
     PetscFunctionReturn(0);
 }
 
