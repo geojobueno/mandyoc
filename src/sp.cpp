@@ -76,7 +76,6 @@ PetscErrorCode sp_evaluate_surface_processes_2d(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_diffusion(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_only(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(PetscReal dt);
-PetscErrorCode sp_aggradation_surface_2d(PetscReal dt, PetscInt n, PetscReal hsl, PetscReal *seq_array);
 PetscErrorCode sp_update_surface_swarm_particles_properties();
 PetscErrorCode sp_update_active_sediment_layer(double time);
 PetscErrorCode sp_update_sedimentation_rate(double time);
