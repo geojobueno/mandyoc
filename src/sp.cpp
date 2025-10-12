@@ -926,7 +926,7 @@ PetscErrorCode sp_update_surface_swarm_particles_properties()
                 geoq_fac[p] = inter_geoq[active_sediment_layer];
                 strain_fac[p] = strain_sed;
 
-                PetscSynchronizedPrintf(PETSC_COMM_WORLD, "[%d] particle updated - a2l - sedimentation | px=%.3e py=%.3e surface=%.3e | sed_layer = %d\n | strain = %.2f", rank, px, py, surface, active_sediment_layer,strain_sed);
+                PetscSynchronizedPrintf(PETSC_COMM_WORLD, "[%d] particle updated - a2l - sedimentation | px=%.3e py=%.3e surface=%.3e | sed_layer = %d | strain = %.2f\n", rank, px, py, surface, active_sediment_layer,strain_sed);
             }
         }
 
