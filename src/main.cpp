@@ -285,7 +285,7 @@ int main(int argc,char **args)
 		
 		if (dimensions == 2 && variable_baselevel == 1){
 			ierr = sp_update_base_level(tempo);
-			PetscPrinf(PETSC_COMM_WORLD,"base level = %.3g m\n", sea_level);
+			PetscPrintf(PETSC_COMM_WORLD,"base level = %.3g m\n", sea_level);
 			CHKERRQ(ierr);
 		}
 		
