@@ -110,7 +110,7 @@ extern PetscReal *var_bl_time;
 extern PetscReal *var_bl_value;
 extern PetscInt n_var_bl;
 
-//DEBUG SED PARAMETERS
+// Sedimentation parameters
 extern PetscReal continental_slope;
 extern PetscReal strain_sed;
 extern PetscReal aggradation_rate;
@@ -272,7 +272,6 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "surface_particles_per_element") == 0) {dms_s_ppe = atoi(tkn_v);}
 			else if (strcmp(tkn_w, "weakening_min") == 0) {weakening_min = atof(tkn_v);}
 			else if (strcmp(tkn_w, "weakening_max") == 0) {weakening_max = atof(tkn_v);}
-			//DEBUG SED PARAMETERS
 			else if (strcmp(tkn_w, "continental_slope") ==0) {continental_slope = atof(tkn_v);} 
 			else if (strcmp(tkn_w, "strain_sed") ==0) {strain_sed = atof(tkn_v);}
 			else if (strcmp(tkn_w, "aggradation_rate") ==0) {aggradation_rate = atof(tkn_v);}
@@ -511,7 +510,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&export_lithology,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
 
 	MPI_Bcast(&non_dim,1,MPI_INT,0,PETSC_COMM_WORLD);
-	//DEBUG SED PARAMETERS
+	
 	MPI_Bcast(&variable_baselevel,1,MPI_INT,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&continental_slope,1,MPIU_REAL,0,PETSC_COMM_WORLD); 
 	MPI_Bcast(&strain_sed,1,MPIU_REAL,0,PETSC_COMM_WORLD);
@@ -1087,7 +1086,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 		MPI_Bcast(sedimentation_rate_value, n_sedimentation_rate, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
 	}
 
-	// Variable [B]ase [L]evel
+	// Variable Base Level
 	if (variable_baselevel==1) {
 		FILE *f_bl;
 		f_bl = fopen("base_level.txt","r");

@@ -49,14 +49,14 @@ extern PetscInt n_sedimentation_rate;
 extern PetscInt cont_sedimentation_rate;
 extern PetscReal sedimentation_rate;
 
-//variable base level
+// Variable base level
 extern PetscInt variable_baselevel;
 extern PetscReal *var_bl_time;
 extern PetscReal *var_bl_value;
 extern PetscInt n_var_bl;
 extern PetscInt cont_bl_level;
 
-//DEBUG SED PARAMETERS
+// Sedimentation Parameters
 extern PetscReal continental_slope;
 extern PetscReal strain_sed;
 extern PetscReal aggradation_rate;
@@ -79,7 +79,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(Petsc
 PetscErrorCode sp_update_surface_swarm_particles_properties();
 PetscErrorCode sp_update_active_sediment_layer(double time);
 PetscErrorCode sp_update_sedimentation_rate(double time);
-PetscErrorCode sp_update_sea_level(double time);
+PetscErrorCode sp_update_base_level(double time);
 PetscErrorCode DMLocatePoints_DMDARegular_2d(DM dm,Vec pos,DMPointLocationType ltype, PetscSF cellSF);
 PetscErrorCode DMGetNeighbors_DMDARegular_2d(DM dm,PetscInt *nneighbors,const PetscMPIInt **neighbors);
 PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
@@ -980,7 +980,7 @@ PetscErrorCode sp_update_active_sediment_layer(double time)
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode sp_update_sea_level(double time)
+PetscErrorCode sp_update_base_level(double time)
 {
     PetscFunctionBeginUser;
 
