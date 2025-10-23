@@ -105,6 +105,15 @@ extern PetscBool plot_sediment;
 extern PetscBool a2l;
 extern PetscBool export_kappa;
 extern PetscBool export_lithology;
+extern PetscInt variable_baselevel; // variable base level
+extern PetscReal *var_bl_time;
+extern PetscReal *var_bl_value;
+extern PetscInt n_var_bl;
+
+// Sedimentation parameters
+extern PetscReal continental_slope;
+extern PetscReal strain_sed;
+extern PetscReal aggradation_rate;
 
 // Removed from parameter file
 extern double H_lito;
@@ -263,7 +272,10 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "surface_particles_per_element") == 0) {dms_s_ppe = atoi(tkn_v);}
 			else if (strcmp(tkn_w, "weakening_min") == 0) {weakening_min = atof(tkn_v);}
 			else if (strcmp(tkn_w, "weakening_max") == 0) {weakening_max = atof(tkn_v);}
-
+			else if (strcmp(tkn_w, "continental_slope") ==0) {continental_slope = atof(tkn_v);} 
+			else if (strcmp(tkn_w, "strain_sed") ==0) {strain_sed = atof(tkn_v);}
+			else if (strcmp(tkn_w, "aggradation_rate") ==0) {aggradation_rate = atof(tkn_v);}
+			
 			// String parameters
 			else if (strcmp(tkn_w, "sp_mode") == 0) {sp_mode = sp_mode_from_string(tkn_v);}
 
@@ -322,6 +334,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "high_kappa_in_asthenosphere") == 0) {high_kappa_in_asthenosphere = check_a_b(tkn_w, tkn_v, "True", "False");}
 
 			else if (strcmp(tkn_w, "nondimensionalization") == 0) {non_dim = check_a_b(tkn_w, tkn_v, "True", "False");}
+			else if (strcmp(tkn_w, "variable_base_level") == 0) {variable_baselevel = check_a_b_bool(tkn_w, tkn_v, "True", "False");}
 			/*else if (strcmp(tkn_w, "h0_scaled") == 0) {h0_scaled = atof(tkn_v);}
 			else if (strcmp(tkn_w, "visc0_scaled") == 0) {visc0_scaled = atof(tkn_v);}
 			else if (strcmp(tkn_w, "g0_scaled") == 0) {g0_scaled = atof(tkn_v);}
@@ -497,6 +510,11 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&export_lithology,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
 
 	MPI_Bcast(&non_dim,1,MPI_INT,0,PETSC_COMM_WORLD);
+	
+	MPI_Bcast(&variable_baselevel,1,MPI_INT,0,PETSC_COMM_WORLD);
+	MPI_Bcast(&continental_slope,1,MPIU_REAL,0,PETSC_COMM_WORLD); 
+	MPI_Bcast(&strain_sed,1,MPIU_REAL,0,PETSC_COMM_WORLD);
+	MPI_Bcast(&aggradation_rate,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 
 	if (pressure_in_rheol == 0 && h_air < 0.0) {
 		PetscPrintf(PETSC_COMM_WORLD, "Specify the thickness of the air layer with the flag -h_air\n");
@@ -1067,6 +1085,36 @@ PetscErrorCode reader(int rank, const char fName[]){
 		MPI_Bcast(sedimentation_rate_time, n_sedimentation_rate, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
 		MPI_Bcast(sedimentation_rate_value, n_sedimentation_rate, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
 	}
+
+	// Variable Base Level
+	if (variable_baselevel==1) {
+		FILE *f_bl;
+		f_bl = fopen("base_level.txt","r");
+		if (f_bl==NULL) { //Check if the file exists
+			PetscPrintf(PETSC_COMM_WORLD,"\n\n\n\nbase_level.txt not found\n\n\n\n");
+			exit(1);
+		}
+		if (rank==0){
+			fscanf(f_bl, "%d", &n_var_bl); // Number of time steps with different base level
+		}
+		MPI_Bcast(&n_var_bl, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		PetscCalloc1(n_var_bl, &var_bl_time);
+		PetscCalloc1(n_var_bl, &var_bl_value);
+
+		if (rank==0){
+			printf("Variable base level\n");
+			for (int i=0;i<n_var_bl;i++){
+				fscanf(f_bl,"%lf%lf",&var_bl_time[i],&var_bl_value[i]);
+				printf("%.2lf Myr, base level = %.1lf\n",var_bl_time[i],var_bl_value[i]);
+			}
+			printf("\n\n");
+			fclose(f_bl);
+		}
+		MPI_Bcast(var_bl_time,n_var_bl,MPIU_SCALAR,0,PETSC_COMM_WORLD);
+		MPI_Bcast(var_bl_value,n_var_bl,MPIU_SCALAR,0,PETSC_COMM_WORLD);
+	}
+
+	continental_slope = tan(continental_slope * PETSC_PI / 180.0); //Update the continental slope in degrees to its tangent value
 
 	PetscFunctionReturn(0);
 
