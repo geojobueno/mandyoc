@@ -1226,6 +1226,9 @@ SP_Mode sp_mode_from_string(const char* str) {
 	if (strcmp(str, "sedimentation_rate_limited") == 0) {
         return SP_SEDIMENTATION_RATE_LIMITED;
     }
+	if (strcmp(str, "theunissen_sedimentation") == 0) {
+		return SP_THEUNISSEN_SEDIMENTATION;
+	}
 
     fprintf(stderr, "Error: Unknown sp_mode '%s'\nValid modes are:\n", str);
     for (const char** mode = valid_modes; *mode; mode++) {
@@ -1245,6 +1248,8 @@ const char* sp_mode_to_string(SP_Mode mode) {
 			return "sedimentation_only";
 		case SP_SEDIMENTATION_RATE_LIMITED:
 			return "sedimentation_rate_limited";
+		case SP_THEUNISSEN_SEDIMENTATION:
+			return "theunissen_sedimentation";
     }
 
 	// If execution reaches here, it's a programming error
