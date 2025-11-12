@@ -894,7 +894,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_theunissen(PetscReal dt){
         PetscReal dx_sed = seq_array[2*1]-seq_array[2*0]; // (m) spatial resolution for topography - constant
         PetscReal dep_factor = dx_sed/Ld; // dimensionless deposition factor
         PetscReal Qs_total = sedimentation_rate * (dt/seg_per_ano); // (m^2) sediment volume in the time step
-        PetscReal Qs_flux, Qs_potential; Qs_excess; Qs_real_dep; h_potential; h_dep; // aux variables to calculate Qs in each node and the potential height
+        PetscReal Qs_flux, Qs_potential, Qs_excess, Qs_real_dep, h_potential, h_dep; // aux variables to calculate Qs in each node and the potential height
         PetscReal current_topo, h_accommodation; // topography and accomodation thickness 
         Qs_flux = Qs_total;
 
