@@ -897,7 +897,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_theunissen(PetscReal dt){
         PetscReal Qs_flux, Qs_potential, Qs_excess, Qs_real_dep, h_potential, h_dep; // aux variables to calculate Qs in each node and the potential height
         PetscReal current_topo, h_accommodation; // topography and accomodation thickness 
         Qs_flux = Qs_total;
-
+        printf("[Li] Qs_flux = %e m^2 || ",Qs_flux);
         // Future: Turn it on a separated generalized function for both sides deposition (0: L2R; 1: R2L)
         // left side progradation
         for (j=0; j<n; j++){
@@ -930,10 +930,11 @@ PetscErrorCode sp_evaluate_surface_processes_2d_theunissen(PetscReal dt){
             // Update Qs flux for the next cell
             Qs_flux = Qs_flux - Qs_real_dep + Qs_excess; //Qs[i+1] = Qs[i]-Qdep[i]+Qbp[i]
         }
-
+        printf("[Lf] Qs_flux = %e m^2 \n",Qs_flux);
         Qs_flux = Qs_total;
+        printf("[Ri] Qs_flux = %e m^2 || ",Qs_flux);
         // right side
-            for (j = n-1; j>=0; j--){
+        for (j = n-1; j>=0; j--){
             Qs_potential = Qs_flux*dep_factor;
             h_potential = Qs_potential/dx_sed;
 
@@ -963,7 +964,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_theunissen(PetscReal dt){
             // Update Qs flux for the next cell
             Qs_flux = Qs_flux - Qs_real_dep + Qs_excess; //Qs[i+1] = Qs[i]-Qdep[i]+Qbp[i]
         }
-
+        printf("[Rf] Qs_flux = %e m^2 \n",Qs_flux);
     }
 
     // Broadcast processed data to all ranks

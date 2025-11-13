@@ -1052,7 +1052,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 
 
 	// SP_Mode SP_SEDIMENTATION_RATE_LIMITED
-	if (dimensions == 2 && sp_mode == SP_SEDIMENTATION_RATE_LIMITED) {
+	if (dimensions == 2 && ((sp_mode == SP_SEDIMENTATION_RATE_LIMITED)||(sp_mode == SP_THEUNISSEN_SEDIMENTATION))) {
 		FILE *f_sedimentation_rate;
 
 		f_sedimentation_rate = fopen("sedimentation_rate.txt", "r");
