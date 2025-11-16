@@ -895,7 +895,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_theunissen(PetscReal dt){
         ierr = PetscCalloc1(seq_surface_size, &seq_array); CHKERRQ(ierr);
         n = seq_surface_size / 2;
     }
-    ierr = MPI_Bcast(seq_array, seq_surface_size, MPIU_SCALAR, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    // ierr = MPI_Bcast(seq_array, seq_surface_size, MPIU_SCALAR, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
 
     // Dynamic progradation logic
     if (!rank){
