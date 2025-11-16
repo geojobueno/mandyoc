@@ -957,7 +957,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_theunissen(PetscReal dt){
             Qs_flux = Qs_flux - Qs_real_dep; //+ Qs_excess; //Qs[i+1] = Qs[i]-Qdep[i]+Qbp[i]
         }
         printf("[Lf] Qs_flux = %e m^2 \n",Qs_flux);
-        printf("[L] Qs_total-Qs_flux = %e");
+        // printf("[L] Qs_total-Qs_flux = %e");
         Qs_flux = Qs_total;
         printf("[Ri] Qs_flux = %e m^2 || ",Qs_flux);
         // right side
@@ -1002,7 +1002,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_theunissen(PetscReal dt){
     // if (rank) {
     //     ierr = PetscCalloc1(seq_surface_size, &seq_array); CHKERRQ(ierr);
     //}
-    //  ierr = MPI_Bcast(seq_array, seq_surface_size, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
+    ierr = MPI_Bcast(seq_array, seq_surface_size, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
 
     ierr = DMDAGetCorners(da_Veloc, &si, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
     ierr = DMSwarmGetLocalSize(dms_s, &nlocal); CHKERRQ(ierr);
