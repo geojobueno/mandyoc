@@ -377,7 +377,7 @@ PetscErrorCode createSwarm_2d()
 	particles_per_ele = nx_part*nz_part;
 	PetscInt particles_export_step = (int)(particles_per_ele/particles_to_export);
 	// fixing the array aliasing
-	if (particles_export_step % nz_part == 0) { step += 1; }; // to avoid exporting the same particles at each step when particles_per_ele is divisible by particles_to_export
+	if (particles_export_step % nz_part == 0) { particles_export_step += 1; }; // to avoid exporting the same particles at each step when particles_per_ele is divisible by particles_to_export
 
 	PetscPrintf(PETSC_COMM_WORLD,"particles per element in x:  %d\n",nx_part);
 	PetscPrintf(PETSC_COMM_WORLD,"particles per element in z:  %d\n",nz_part);
@@ -470,7 +470,7 @@ PetscErrorCode createSwarm_2d()
 		ierr = DMSwarmGetField(dms,"strain_fac",&bs,NULL,(void**)&strain_array);CHKERRQ(ierr);
 
 		ierr = DMSwarmGetField(dms,DMSwarmPICField_coor,&bs,NULL,(void**)&array);CHKERRQ(ierr);
-		if (checkered==0){
+		if (checkered==0){ // must be implemented for 3D version
 			for (p=0; p<nlocal; p++) {
 				int local_p = p%particles_per_ele; // local particle index inside the element
 				iarray[p] = local_p; // set itag based on the local particle index inside the element
