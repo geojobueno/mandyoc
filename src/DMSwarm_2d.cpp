@@ -377,7 +377,7 @@ PetscErrorCode createSwarm_2d()
 	particles_per_ele = nx_part*nz_part;
 	PetscInt particles_export_step = (int)(particles_per_ele/particles_to_export);
 	// fixing the array aliasing
-	if (particles_export_step % nz_part == 0) { particles_export_step += 1; }; // to avoid exporting the same particles at each step when particles_per_ele is divisible by particles_to_export
+	if (particles_export_step % nz_part == 0) { particles_export_step -= 1; }; // to avoid exporting the same particles at each step when particles_per_ele is divisible by particles_to_export
 
 	PetscPrintf(PETSC_COMM_WORLD,"particles per element in x:  %d\n",nx_part);
 	PetscPrintf(PETSC_COMM_WORLD,"particles per element in z:  %d\n",nz_part);
