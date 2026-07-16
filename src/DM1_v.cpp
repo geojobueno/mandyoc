@@ -128,6 +128,9 @@ extern PetscInt periodic_boundary;
 
 extern PetscReal veloc0_scaled;
 
+extern PetscScalar *inter_rho;
+extern int n_interfaces;
+
 PetscErrorCode AssembleA_Veloc_2d(Mat A,Mat AG,DM veloc_da, DM temper_da){
 
 	PetscErrorCode         ierr;
@@ -289,6 +292,19 @@ PetscErrorCode AssembleA_Veloc_2d(Mat A,Mat AG,DM veloc_da, DM temper_da){
 				Ke_veloc_final[5*9] += traction_bottom;
 				Ke_veloc_final[7*9] += traction_bottom;
 
+			}
+
+			// restauration force on the bottom of the model - 2D
+			if (ek == 0) { 
+				PetscReal rho_mantle = inter_rho[n_interfaces]; // Asthenosphere density in kg/m^3
+				
+				// C = density * gravity * dt * node_area * theta
+				// 2D: area is equal to dx_const / 2.0 for each node at the base of an element
+				PetscReal C_winkler = theta_FSSA * dt_calor_sec * rho_mantle * gravity * dx_const / 2.0;
+
+				// Add C_winkler at the local matrix diagonal (only for the Vz velocity of the bottom nodes 0 and 1)
+				Ke_veloc_final[1 * 9] += C_winkler; // Node 0 (ei, ek)   - DOF w
+				Ke_veloc_final[3 * 9] += C_winkler; // Node 1 (ei+1, ek) - DOF w
 			}
 
 			n=0;
