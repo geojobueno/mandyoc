@@ -133,6 +133,8 @@ extern PetscReal Basal_Pressure;
 extern PetscReal basal_velocity_previous;
 
 extern PetscReal RHOM; //!!! Change to the density of the deepest layer
+extern PetscReal rho_mantle; // density of the deepest layer
+extern PetscReal c_winkler;
 
 PetscErrorCode AssembleA_Veloc_2d(Mat A,Mat AG,DM veloc_da, DM temper_da){
 
@@ -655,7 +657,6 @@ PetscErrorCode calc_winkler(){
 	PetscFunctionBeginUser;
 	ierr = DMDAGetInfo(da_Veloc,0,&M,&P,NULL,0,0,0, 0,0,0,0,0,0);CHKERRQ(ierr);
 
-
 	ierr = VecZeroEntries(local_V);CHKERRQ(ierr);
 
 	ierr = DMGlobalToLocalBegin(da_Veloc,Veloc_0,INSERT_VALUES,local_V);
@@ -667,15 +668,16 @@ PetscErrorCode calc_winkler(){
 
 	ierr = DMDAGetCorners(da_Veloc,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
 
+	
 	PetscReal basal_velocity;
-	if (dt_calor_sec>0) basal_velocity = 0.5*(Basal_Pressure0-Basal_Pressure)/(RHOM*gravity*dt_calor_sec); // 50% percent of the pressure adjustment
+	if (dt_calor_sec>0) basal_velocity = c_winkler*(Basal_Pressure0-Basal_Pressure)/(RHOM*gravity*dt_calor_sec); // 50% percent of the pressure adjustment
 	else basal_velocity = 0.0;
 
 	for (k=sz; k<sz+mmz; k++) {
 		for (i=sx; i<sx+mmx; i++) {
 
 			if (k==0 || k==Nz-1){
-				VV[k][i].w+=basal_velocity-basal_velocity_previous;
+				VV[k][i].w = ((1-c_winkler)*VV[k][i].w) + (c_winkler * basal_velocity);
 			}
 
 		}

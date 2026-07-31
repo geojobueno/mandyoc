@@ -120,6 +120,9 @@ extern PetscBool magmatism_extraction_flag;
 extern PetscInt magmatic_layer;
 extern PetscBool winkler;
 
+extern PetscReal c_winkler;
+extern PetscReal rho_mantle;
+
 // Removed from parameter file
 extern double H_lito;
 extern double beta_max;
@@ -969,6 +972,9 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&weakening_from_interfaces_file,1,MPIU_BOOL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(conductivity,n_interfaces+1,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 
+	PetscReal rho_mantle = inter_rho[0];
+	MPI_Bcast(&rho_mantle,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
+	PetscPrintf(PETSC_COMM_WORLD, "rho_mantle=%lg kg/m3\n",rho_mantle);
 
 	// Broadcast, special cases
 //	MPI_Bcast(&n_interfaces,1,MPI_INT,0,PETSC_COMM_WORLD); // Broadcast after interfaces.txt

@@ -9,6 +9,8 @@ PetscReal rtol = PETSC_DEFAULT;
 PetscReal denok_min = 1.0E-4;
 PetscInt particles_per_ele = 81;
 PetscReal theta_FSSA = 0.5;
+PetscReal c_winkler = 0.5;
+PetscReal rho_mantle;
 PetscReal sub_division_time_step = 1.0;
 PetscReal particles_perturb_factor = 0.5;
 PetscReal Xi_min = 1.0E-14;

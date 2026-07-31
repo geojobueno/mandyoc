@@ -301,7 +301,7 @@ PetscReal calc_mean_basal_pressure_2d()
 
     for (k=sz; k<sz+mmz; k++) {
         for (i=sx; i<sx+mmx; i++) {
-            if (k==0){
+            if (k==0 && (i>0 && i<Nx)){
                 pressure_basal+=pp_aux[k][i];
                 cont_pressure++;
             }
@@ -321,7 +321,7 @@ PetscReal calc_mean_basal_pressure_2d()
 
 	pressure_mean = pressure_basal_all/cont_pressure_all;
 
-	PetscPrintf(PETSC_COMM_WORLD,"Basal Pressure: %lg\n",pressure_mean);
+	PetscPrintf(PETSC_COMM_WORLD,"Basal Pressure: %lg Pa\n",pressure_mean);
 
 
 	//restore Pressure
@@ -332,6 +332,42 @@ PetscReal calc_mean_basal_pressure_2d()
 
 	return pressure_mean;
 }
+
+PetscErrorCode get_basal_pressure(){
+	PetscErrorCode ierr;
+
+	Stokes2d  **pp;
+	PetscScalar  **pp_aux;
+	Vec basal_pressure;
+	Vec basal_pressure_0; // basal pressure at the initial step
+
+	// Create 1D array
+	ierr = VecCreate(PETSC_COMM_WORLD, &Basal_P); CHKERRQ(ierr);
+	ierr = VecSetSizes(Basal_P, PETSC_DECIDE, Nx); CHKERRQ(ierr);
+	ierr = VecSetFromOptions(Basal_P); CHKERRQ(ierr);
+
+	//get Pressure_aux array
+	ierr = DMGlobalToLocalBegin(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);CHKERRQ(ierr);
+	ierr = DMGlobalToLocalEnd(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);CHKERRQ(ierr);
+	ierr = DMDAVecGetArray(da_Thermal, local_P_aux, &pp_aux);CHKERRQ(ierr);
+
+	// get indexes from petsc
+	PetscInt sx, sz, mmx, mmz;
+	PetscInt i, k;
+	ierr = DMDAGetCorners(da_Veloc,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
+
+	// extract pressure at the bottom (k==0)
+	for ()
+
+	// restore pressure array
+	ierr = DMDAVecRestoreArray(da_Thermal, local_P_aux, &pp_aux); CHKERRQ(ierr);
+
+	// Assembly to sync array
+	ierr = VecAssemblyBegin(basal_pressure);CHKERRQ(ierr);
+	ierr = VecAssemblyEnd(basal_pressure);CHKERRQ(ierr);
+
+	return basal_pressure;
+};
 
 PetscErrorCode calc_pressure_3d()
 {
