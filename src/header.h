@@ -414,6 +414,7 @@ PetscBool export_kappa = PETSC_FALSE;
 PetscBool export_lithology = PETSC_FALSE;
 
 PetscBool winkler = PETSC_FALSE;
+Vec basal_pressure_0;
 PetscReal basal_velocity_previous=0.0;
 
 PetscReal Basal_Pressure0 = 0.0;

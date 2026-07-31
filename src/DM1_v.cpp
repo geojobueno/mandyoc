@@ -668,7 +668,8 @@ PetscErrorCode calc_winkler(){
 
 	ierr = DMDAGetCorners(da_Veloc,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
 
-	
+	ierr = get_basal_pressure_2d();CHKERRQ(ierr);
+
 	PetscReal basal_velocity;
 	if (dt_calor_sec>0) basal_velocity = c_winkler*(Basal_Pressure0-Basal_Pressure)/(RHOM*gravity*dt_calor_sec); // 50% percent of the pressure adjustment
 	else basal_velocity = 0.0;

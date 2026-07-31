@@ -333,31 +333,35 @@ PetscReal calc_mean_basal_pressure_2d()
 	return pressure_mean;
 }
 
-PetscErrorCode get_basal_pressure(){
+PetscErrorCode get_basal_pressure_2d(Vec *basal_pressure_out){
 	PetscErrorCode ierr;
 
-	Stokes2d  **pp;
+	PetscScalar p_val;
 	PetscScalar  **pp_aux;
 	Vec basal_pressure;
-	Vec basal_pressure_0; // basal pressure at the initial step
 
 	// Create 1D array
-	ierr = VecCreate(PETSC_COMM_WORLD, &Basal_P); CHKERRQ(ierr);
-	ierr = VecSetSizes(Basal_P, PETSC_DECIDE, Nx); CHKERRQ(ierr);
-	ierr = VecSetFromOptions(Basal_P); CHKERRQ(ierr);
+	ierr = VecCreate(PETSC_COMM_WORLD, &basal_pressure);
+	ierr = VecSetSizes(basal_pressure, PETSC_DECIDE, Nx); 
+	ierr = VecSetFromOptions(basal_pressure); CHKERRQ(ierr);
 
 	//get Pressure_aux array
-	ierr = DMGlobalToLocalBegin(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);CHKERRQ(ierr);
-	ierr = DMGlobalToLocalEnd(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);CHKERRQ(ierr);
+	ierr = DMGlobalToLocalBegin(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);
+	ierr = DMGlobalToLocalEnd(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);
 	ierr = DMDAVecGetArray(da_Thermal, local_P_aux, &pp_aux);CHKERRQ(ierr);
 
 	// get indexes from petsc
 	PetscInt sx, sz, mmx, mmz;
-	PetscInt i, k;
-	ierr = DMDAGetCorners(da_Veloc,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
+	PetscInt i, k=0;
+	ierr = DMDAGetCorners(da_Thermal,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
 
 	// extract pressure at the bottom (k==0)
-	for ()
+	if (sz == 0){
+		for (i = sx; i < sx+mmx;i++){
+			p_val = pp_aux[k][i];
+			ierr = VecSetValue(basal_pressure, i, p_val, INSERT_VALUES);CHKERRQ(ierr);
+		};
+	};
 
 	// restore pressure array
 	ierr = DMDAVecRestoreArray(da_Thermal, local_P_aux, &pp_aux); CHKERRQ(ierr);
@@ -366,7 +370,9 @@ PetscErrorCode get_basal_pressure(){
 	ierr = VecAssemblyBegin(basal_pressure);CHKERRQ(ierr);
 	ierr = VecAssemblyEnd(basal_pressure);CHKERRQ(ierr);
 
-	return basal_pressure;
+	*basal_pressure_out = basal_pressure; // do not forget to destroy the basal_pressure array after use
+
+	return PetscFunctionReturn(0);
 };
 
 PetscErrorCode calc_pressure_3d()
