@@ -372,7 +372,7 @@ PetscErrorCode get_basal_pressure_2d(Vec *basal_pressure_out){
 
 	*basal_pressure_out = basal_pressure; // do not forget to destroy the basal_pressure array after use
 
-	return PetscFunctionReturn(0);
+	PetscFunctionReturn(0);
 };
 
 PetscErrorCode calc_pressure_3d()
