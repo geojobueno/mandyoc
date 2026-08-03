@@ -972,7 +972,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&weakening_from_interfaces_file,1,MPIU_BOOL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(conductivity,n_interfaces+1,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 
-	PetscReal rho_mantle = inter_rho[0];
+	rho_mantle = inter_rho[0];
 	MPI_Bcast(&rho_mantle,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
 	PetscPrintf(PETSC_COMM_WORLD, "rho_mantle=%lg kg/m3\n",rho_mantle);
 

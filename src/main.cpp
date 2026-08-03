@@ -70,7 +70,7 @@ PetscErrorCode get_basal_pressure_2d();
 PetscErrorCode calc_magmatic_extraction();
 
 PetscReal calc_mean_basal_pressure_2d();
-PetscErrorCode calc_winkler();
+// PetscErrorCode calc_winkler();
 
 
 int main(int argc,char **args)
@@ -241,6 +241,13 @@ int main(int argc,char **args)
 
 	PetscPrintf(PETSC_COMM_WORLD,"Solution of the pressure and velocity fields: done\n");
 
+	if (dimensions == 2 && winkler==PETSC_TRUE){
+			ierr = get_basal_pressure_2d();CHKERRQ(ierr);
+			//VecDestroy(&basal_pressure_0);
+			PetscPrintf(PETSC_COMM_WORLD, "*** TESTING BASAL RESTAURATION FORCES - GET BASAL PRESSURE ***\n");
+			//VecView(basal_pressure_0, PETSC_VIEWER_STDOUT_WORLD);
+		}
+	
 	PetscPrintf(PETSC_COMM_WORLD,"\nWriting output files:\n");
 	ierr = write_veloc(tcont,binary_output);
 	ierr = write_veloc_cond(tcont,binary_output);
@@ -254,13 +261,6 @@ int main(int argc,char **args)
 	if (dimensions == 2 && sp_surface_tracking) {
 		ierr = PetscSNPrintf(prefix, PETSC_MAX_PATH_LEN-1,"surface_%d", tcont); CHKERRQ(ierr);
 		ierr = sp_view_2d(dms_s, prefix); CHKERRQ(ierr);
-	}
-
-	if (dimensions == 2 && winkler==PETSC_TRUE){
-		ierr = get_basal_pressure_2d();CHKERRQ(ierr);
-		//VecDestroy(&basal_pressure_0);
-		PetscPrintf(PETSC_COMM_WORLD, "*** TESTING BASAL RESTAURATION FORCES ***\n");
-		//VecView(basal_pressure_0, PETSC_VIEWER_STDOUT_WORLD);
 	}
 
 	VecCopy(Veloc_fut,Veloc);
