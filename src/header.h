@@ -9,8 +9,6 @@ PetscReal rtol = PETSC_DEFAULT;
 PetscReal denok_min = 1.0E-4;
 PetscInt particles_per_ele = 81;
 PetscReal theta_FSSA = 0.5;
-PetscReal c_winkler = 0.5;
-PetscReal rho_mantle;
 PetscReal sub_division_time_step = 1.0;
 PetscReal particles_perturb_factor = 0.5;
 PetscReal Xi_min = 1.0E-14;
@@ -413,8 +411,11 @@ PetscBool export_kappa = PETSC_FALSE;
 
 PetscBool export_lithology = PETSC_FALSE;
 
-PetscBool winkler = PETSC_FALSE;
-Vec basal_pressure_0;
+PetscBool winkler = PETSC_TRUE;
+PetscReal *basal_pressure_0 = NULL;
+PetscReal c_winkler = 0.5;
+PetscReal rho_mantle;
+
 PetscReal basal_velocity_previous=0.0;
 
 PetscReal Basal_Pressure0 = 0.0;

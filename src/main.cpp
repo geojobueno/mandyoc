@@ -66,7 +66,7 @@ PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
 PetscErrorCode validate_sp_mode_combination(PetscBool sp_enabled, SP_Mode mode);
 
 PetscReal calc_mean_basal_pressure_2d();
-PetscErrorCode get_basal_pressure_2d(Vec *basal_pressure_out); 
+PetscErrorCode get_basal_pressure_2d(); 
 PetscErrorCode calc_magmatic_extraction();
 
 PetscReal calc_mean_basal_pressure_2d();
@@ -257,12 +257,10 @@ int main(int argc,char **args)
 	}
 
 	if (dimensions == 2 && winkler==PETSC_TRUE){
-		ierr = get_basal_pressure_2d(&basal_pressure_0);CHKERRQ(ierr);
-		VecView(basal_pressure_0, PETSC_VIEWER_STDOUT_WORLD);
-		VecDestroy(&basal_pressure_0);
-
-		Basal_Pressure0 = calc_mean_basal_pressure_2d();
-		Basal_Pressure = Basal_Pressure0;
+		ierr = get_basal_pressure_2d();CHKERRQ(ierr);
+		//VecDestroy(&basal_pressure_0);
+		PetscPrintf(PETSC_COMM_WORLD, "*** TESTING BASAL RESTAURATION FORCES ***\n");
+		//VecView(basal_pressure_0, PETSC_VIEWER_STDOUT_WORLD);
 	}
 
 	VecCopy(Veloc_fut,Veloc);
@@ -320,11 +318,6 @@ int main(int argc,char **args)
 		ierr = solve_thermal(dimensions);CHKERRQ(ierr);
 
 		ierr = veloc_total(dimensions); CHKERRQ(ierr);
-
-		if (dimensions == 2 && winkler==PETSC_TRUE){
-			Basal_Pressure = calc_mean_basal_pressure_2d(); ///!!! Not yet implemented for 3D
-			calc_winkler(); ///!!! Not yet implemented for 3D
-		}
 
 		if (geoq_on){
 			if (RK4==1){

@@ -50,6 +50,7 @@ extern int n_interfaces;
 extern PetscScalar *interfaces;
 
 extern PetscScalar *inter_rho;
+extern PetscScalar *basal_pressure_0;
 
 typedef struct {
 	PetscScalar u;
@@ -333,17 +334,20 @@ PetscReal calc_mean_basal_pressure_2d()
 	return pressure_mean;
 }
 
-PetscErrorCode get_basal_pressure_2d(Vec *basal_pressure_out){
+PetscErrorCode get_basal_pressure_2d(){
 	PetscErrorCode ierr;
-
-	PetscScalar p_val;
 	PetscScalar  **pp_aux;
-	Vec basal_pressure;
+	PetscScalar  *local_basal_pressure;
 
-	// Create 1D array
-	ierr = VecCreate(PETSC_COMM_WORLD, &basal_pressure);
-	ierr = VecSetSizes(basal_pressure, PETSC_DECIDE, Nx); 
-	ierr = VecSetFromOptions(basal_pressure); CHKERRQ(ierr);
+	// basal_pressure_0 = (PetscReal*) malloc(Nx * sizeof(PetscReal)); //allocate memory for basal_pressure_0
+	ierr = PetscMalloc1(Nx, &basal_pressure_0); CHKERRQ(ierr);
+
+	// temporary array to hold local basal pressure values
+	// PetscReal *local_basal_pressure = (PetscReal*) malloc(Nx * sizeof(PetscReal));
+	ierr = PetscMalloc1(Nx, &local_basal_pressure); CHKERRQ(ierr);
+    for (PetscInt i = 0; i < Nx; i++) {
+        local_basal_pressure[i] = 0.0;
+    }
 
 	//get Pressure_aux array
 	ierr = DMGlobalToLocalBegin(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);
@@ -352,25 +356,31 @@ PetscErrorCode get_basal_pressure_2d(Vec *basal_pressure_out){
 
 	// get indexes from petsc
 	PetscInt sx, sz, mmx, mmz;
-	PetscInt i, k=0;
 	ierr = DMDAGetCorners(da_Thermal,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
 
 	// extract pressure at the bottom (k==0)
-	if (sz == 0){
-		for (i = sx; i < sx+mmx;i++){
-			p_val = pp_aux[k][i];
-			ierr = VecSetValue(basal_pressure, i, p_val, INSERT_VALUES);CHKERRQ(ierr);
-		};
-	};
+	PetscInt k = 0; 
+    if (sz == 0) {
+        for (PetscInt i = sx; i < sx + mmx; i++) {
+            
+            local_basal_pressure[i] = pp_aux[k][i];
+        }
+    }
 
 	// restore pressure array
 	ierr = DMDAVecRestoreArray(da_Thermal, local_P_aux, &pp_aux); CHKERRQ(ierr);
 
-	// Assembly to sync array
-	ierr = VecAssemblyBegin(basal_pressure);CHKERRQ(ierr);
-	ierr = VecAssemblyEnd(basal_pressure);CHKERRQ(ierr);
+	// save global array
+	MPI_Allreduce(local_basal_pressure, basal_pressure_0, Nx, MPI_DOUBLE, MPI_SUM, PETSC_COMM_WORLD);
 
-	*basal_pressure_out = basal_pressure; // do not forget to destroy the basal_pressure array after use
+	ierr = PetscFree(local_basal_pressure); CHKERRQ(ierr);
+
+	PetscBool print_pressure0 = PETSC_TRUE;
+	if (print_pressure0){
+		for (PetscInt i = 0; i < Nx; i+=2) {
+        PetscPrintf(PETSC_COMM_WORLD, "X[%d] = %g Pa\n", i, basal_pressure_0[i]);
+			}
+	}
 
 	PetscFunctionReturn(0);
 };
