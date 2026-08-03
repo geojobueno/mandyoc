@@ -335,55 +335,43 @@ PetscReal calc_mean_basal_pressure_2d()
 }
 
 PetscErrorCode get_basal_pressure_2d(){
-	PetscErrorCode ierr;
-	PetscScalar  **pp;
-	PetscScalar  *local_basal_pressure;
+    PetscErrorCode ierr;
+    Stokes2d **pp; 
+    PetscScalar *local_basal_pressure;
 
-	// basal_pressure_0 = (PetscReal*) malloc(Nx * sizeof(PetscReal)); //allocate memory for basal_pressure_0
-	ierr = PetscMalloc1(Nx, &basal_pressure_0); CHKERRQ(ierr);
-
-	// temporary array to hold local basal pressure values
-	// PetscReal *local_basal_pressure = (PetscReal*) malloc(Nx * sizeof(PetscReal));
-	ierr = PetscMalloc1(Nx, &local_basal_pressure); CHKERRQ(ierr);
+    // Allocate memory for basal_pressure_0 if it hasn't been allocated yet
+    if (basal_pressure_0 == NULL) {
+        ierr = PetscMalloc1(Nx, &basal_pressure_0); CHKERRQ(ierr);
+    }
+    ierr = PetscMalloc1(Nx, &local_basal_pressure); CHKERRQ(ierr);
     for (PetscInt i = 0; i < Nx; i++) {
         local_basal_pressure[i] = 0.0;
     }
 
-	//get Pressure_aux array
-	ierr = DMGlobalToLocalBegin(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);
-	ierr = DMGlobalToLocalEnd(da_Thermal, Pressure_aux, INSERT_VALUES, local_P_aux);
-	ierr = DMDAVecGetArray(da_Thermal, local_P_aux, &pp);CHKERRQ(ierr);
+	// Get the local pressure array (nodes)
+    ierr = DMGlobalToLocalBegin(da_Veloc, Pressure, INSERT_VALUES, local_P); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(da_Veloc, Pressure, INSERT_VALUES, local_P); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da_Veloc, local_P, &pp); CHKERRQ(ierr);
 
-	// get indexes from petsc
-	PetscInt sx, sz, mmx, mmz;
-	ierr = DMDAGetCorners(da_Thermal,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
+    // getting indexes for each element corner in the local domain
+    PetscInt sex, sez, mx, mz;
+    ierr = DMDAGetElementCorners_2d(da_Veloc, &sex, &sez, &mx, &mz); CHKERRQ(ierr);
 
-	// extract pressure at the bottom (k==0)
-	PetscInt k = 0; 
-    if (sz == 0) {
-        for (PetscInt i = sx; i < sx + mmx; i++) {
-            
-            local_basal_pressure[i] = pp[k][i];
+
+    if (sez == 0) {
+        for (PetscInt ei = sex; ei < sex + mx; ei++) {
+            local_basal_pressure[ei] = pp[0][ei].u;
         }
     }
 
-	// restore pressure array
-	ierr = DMDAVecRestoreArray(da_Thermal, local_P_aux, &pp); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArray(da_Veloc, local_P, &pp); CHKERRQ(ierr);
 
-	// save global array
-	MPI_Allreduce(local_basal_pressure, basal_pressure_0, Nx, MPI_DOUBLE, MPI_SUM, PETSC_COMM_WORLD);
+    // Reduce to get the global basal pressure across all processes
+    MPI_Allreduce(local_basal_pressure, basal_pressure_0, Nx, MPI_DOUBLE, MPI_SUM, PETSC_COMM_WORLD);
+    ierr = PetscFree(local_basal_pressure); CHKERRQ(ierr); // free memory
 
-	ierr = PetscFree(local_basal_pressure); CHKERRQ(ierr);
-
-	PetscBool print_pressure0 = PETSC_TRUE;
-	if (print_pressure0){
-		for (PetscInt i = 0; i < Nx; i+=2) {
-        PetscPrintf(PETSC_COMM_WORLD, "X[%d] = %g Pa\n", i, basal_pressure_0[i]);
-			}
-	}
-
-	PetscFunctionReturn(0);
-};
+    PetscFunctionReturn(0);
+}
 
 PetscErrorCode calc_pressure_3d()
 {
