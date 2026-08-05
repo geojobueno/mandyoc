@@ -71,7 +71,7 @@ PetscErrorCode calc_magmatic_extraction();
 
 PetscReal calc_mean_basal_pressure_2d();
 // PetscErrorCode calc_winkler();
-
+PetscErrorCode calc_kinematic_winkler();
 
 int main(int argc,char **args)
 {

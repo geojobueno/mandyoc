@@ -25,7 +25,7 @@ extern int bcv_front_slip;
 extern PetscInt bcv_extern;
 
 extern PetscInt visc_const_per_element;
-
+extern PetscErrorCode calc_kinematic_winkler();
 
 typedef struct {
 	PetscScalar u;
@@ -526,6 +526,9 @@ PetscErrorCode build_veloc(int dimensions)
 		write_pressure(-1,binary_output);
 	}
 
+	if (dimensions == 2) {
+		ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
+	}
 	ierr = moveSwarm(dimensions, 0.0);
 
 	if (dimensions == 2) {
