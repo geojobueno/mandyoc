@@ -724,24 +724,53 @@ PetscErrorCode calc_kinematic_winkler(){
 	PetscInt sx, sz, mmx, mmz;
     ierr = DMDAGetCorners(da_Veloc, &sx, &sz, NULL, &mmx, &mmz, NULL); CHKERRQ(ierr);
 
+	PetscReal *basal_velocities, *local_basal_velocities;
+	ierr = PetscMalloc1(Nx, &basal_velocities); CHKERRQ(ierr);
+	ierr = PetscMalloc1(Nx, &local_basal_velocities); CHKERRQ(ierr);
+	for (PetscInt i = 0; i < Nx; i++) {
+		basal_velocities[i] = 0.0;
+		local_basal_velocities[i] = 0.0;
+	}
+
 	for (PetscInt k = sz; k < sz + mmz; k++) {
 		for (PetscInt i = sx; i < sx + mmx; i++) {
 			if (k==0){
 				PetscInt ei = i;
-                if (ei == Nx - 1) ei = Nx - 2;
+                //if (ei == Nx - 1) ei = Nx - 2;
 				PetscReal p_initial = basal_pressure_0[ei];
-                PetscReal p_current = pp[0][ei].u;
+                PetscReal p_current = 0.0;
+                PetscInt cont = 0;
 
-				PetscReal winkler_velocity = (p_initial - p_current) / (rho_mantle * gravity * dt_calor_sec);
+				if (i < Nx - 1) { p_current += pp[0][i].u; cont++; }
+				if (i > 0) { p_current += pp[0][i-1].u; cont++; }
+
+				p_current /= cont;
+
+				PetscReal winkler_velocity = c_winkler * (p_initial - p_current) / (rho_mantle * gravity * dt_calor_sec);
 				
-				VV_0[k][i].w += 0.5 * winkler_velocity;
-                VV_curr[k][i].w += 0.5 * winkler_velocity;
-
-				// PetscPrintf(PETSC_COMM_WORLD, "Kinematic Winkler velocity at (k=%d, i=%d): %lg\n", k, i, winkler_velocity);
-				PetscPrintf(PETSC_COMM_WORLD, "k=%d, i=%d, p_initial=%lg, p_current=%lg, dPdt=%lg\n", k, i, p_initial, p_current, (p_initial - p_current));
+				local_basal_velocities[i] = winkler_velocity;
+				// PetscPrintf(PETSC_COMM_WORLD, "k=%d, i=%d, v_fix=%lg, dPdt=%lg\n", k, i, winkler_velocity, (p_initial - p_current));
+				}
 			}
 		}
-	}
+	
+		MPI_Allreduce(local_basal_velocities, basal_velocities, Nx, MPIU_REAL, MPI_SUM, PETSC_COMM_WORLD);
+
+		for (PetscInt k = sz; k < sz + mmz; k++) {
+			for (PetscInt i = sx; i < sx + mmx; i++) {
+				if (k == 0 || k == Nz - 1) {
+
+				VV_0[k][i].w += basal_velocities[i];
+                VV_curr[k][i].w += basal_velocities[i];
+
+				PetscPrintf(PETSC_COMM_WORLD, "Kinematic Winkler velocity at (k=%d, i=%d): %lg\n", k, i, basal_velocities[i]);
+				
+				}
+			}
+		}
+
+	ierr = PetscFree(basal_velocities); CHKERRQ(ierr);
+	ierr = PetscFree(local_basal_velocities); CHKERRQ(ierr);
 
 	ierr = DMDAVecRestoreArray(da_Veloc, local_P, &pp); CHKERRQ(ierr);
     

@@ -26,6 +26,7 @@ extern PetscInt bcv_extern;
 
 extern PetscInt visc_const_per_element;
 extern PetscErrorCode calc_kinematic_winkler();
+extern PetscBool winkler;
 
 typedef struct {
 	PetscScalar u;
@@ -168,6 +169,8 @@ extern PetscInt periodic_boundary;
 extern int n_interfaces;
 
 extern PetscInt binary_output;
+extern PetscErrorCode calc_kinematic_winkler();
+
 
 PetscErrorCode create_veloc(int dimensions, PetscInt mx, PetscInt my, PetscInt mz, PetscInt Px, PetscInt Py, PetscInt Pz)
 {
@@ -526,9 +529,10 @@ PetscErrorCode build_veloc(int dimensions)
 		write_pressure(-1,binary_output);
 	}
 
-	if (dimensions == 2) {
-		ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
-	}
+	if (winkler == PETSC_TRUE) {
+            ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
+        }
+		
 	ierr = moveSwarm(dimensions, 0.0);
 
 	if (dimensions == 2) {
@@ -546,6 +550,7 @@ PetscErrorCode build_veloc(int dimensions)
 	ierr = calc_drho();CHKERRQ(ierr);
 
 	if (dimensions == 2) {
+
 		ierr = AssembleF_Veloc_2d(Vf,da_Veloc,da_Thermal,Vf_P); CHKERRQ(ierr);
 	} else {
 		ierr = AssembleF_Veloc_3d(Vf,da_Veloc,da_Thermal,Vf_P); CHKERRQ(ierr);

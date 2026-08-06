@@ -357,10 +357,21 @@ PetscErrorCode get_basal_pressure_2d(){
     PetscInt sex, sez, mx, mz;
     ierr = DMDAGetElementCorners_2d(da_Veloc, &sex, &sez, &mx, &mz); CHKERRQ(ierr);
 
+	// similar to shift_pressure_2d, we will average the pressures from the elements surrounding each node at the basal boundary
+    if (sez == 0) { // at the bottom
+        for (PetscInt i = sex; i < sex + mx + 1; i++) {
+            PetscReal p_nodal = 0.0;
+            PetscInt cont = 0;
+            
+			// left element
+            if (i > 0) { p_nodal += pp[0][i-1].u; cont++;}
 
-    if (sez == 0) {
-        for (PetscInt ei = sex; ei < sex + mx; ei++) {
-            local_basal_pressure[ei] = pp[0][ei].u;
+            // right element
+            if (i < Nx - 1) { p_nodal += pp[0][i].u; cont++;}
+            
+            
+            // mean pressure
+            local_basal_pressure[i] = p_nodal / cont;
         }
     }
 
