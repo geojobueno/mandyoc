@@ -337,7 +337,7 @@ PetscReal calc_mean_basal_pressure_2d()
 PetscErrorCode get_basal_pressure_2d(){
     PetscErrorCode ierr;
     Stokes2d **pp; 
-    PetscScalar *local_basal_pressure;
+    PetscReal *local_basal_pressure;
 
     // Allocate memory for basal_pressure_0 if it hasn't been allocated yet
     if (basal_pressure_0 == NULL) {
