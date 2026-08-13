@@ -414,7 +414,7 @@ PetscBool export_lithology = PETSC_FALSE;
 PetscBool winkler = PETSC_TRUE;
 PetscReal *basal_pressure_0 = NULL;
 PetscReal *basal_velocities = NULL;
-PetscReal c_winkler = 1.0;
+PetscReal c_winkler = 0.5;
 PetscReal rho_mantle;
 
 PetscReal basal_velocity_previous=0.0;

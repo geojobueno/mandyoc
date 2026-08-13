@@ -169,8 +169,7 @@ extern PetscInt periodic_boundary;
 extern int n_interfaces;
 
 extern PetscInt binary_output;
-extern PetscErrorCode calc_kinematic_winkler();
-
+extern int step_nl;
 
 PetscErrorCode create_veloc(int dimensions, PetscInt mx, PetscInt my, PetscInt mz, PetscInt Px, PetscInt Py, PetscInt Pz)
 {
@@ -528,10 +527,6 @@ PetscErrorCode build_veloc(int dimensions)
 
 		write_pressure(-1,binary_output);
 	}
-
-	if (winkler == PETSC_TRUE) {
-            ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
-        }
 		
 	ierr = moveSwarm(dimensions, 0.0);
 
@@ -608,6 +603,10 @@ PetscErrorCode solve_veloc(int dimensions)
 	VecAXPY(Veloc_fut,1.0,Veloc_0); ///check: applying Veloc_0 in Veloc at the b.c.
 
 	//write_veloc(101);
+
+	if (winkler == PETSC_TRUE) {
+		ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
+	}
 
 
 	ierr = MatMultTranspose(VG,Veloc_fut,rk_vec2);CHKERRQ(ierr); /// r0 = G^T V0

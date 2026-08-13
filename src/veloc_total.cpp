@@ -18,6 +18,9 @@ extern double visc_MIN;
 
 extern PetscReal Xi_min;
 
+int step_nl = 0;
+extern PetscBool winkler;
+extern PetscErrorCode calc_kinematic_winkler();
 
 PetscErrorCode veloc_total(int dimensions)
 {
@@ -38,6 +41,10 @@ PetscErrorCode veloc_total(int dimensions)
 	}
 	else {
 
+		if (winkler == PETSC_TRUE) {
+			ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
+		}
+
 		VecCopy(Veloc_fut,Veloc_step1);
 
 		VecGetSize(Veloc_fut,&n);
@@ -47,7 +54,7 @@ PetscErrorCode veloc_total(int dimensions)
 
 		PetscReal Xi=50000.0;
 
-		for (int step=0; step<700 && Xi>Xi_min; step++){
+		for (int step_nl=0; step_nl<700 && Xi>Xi_min; step_nl++){
 
 			ierr = build_veloc(dimensions);CHKERRQ(ierr);
 
@@ -75,7 +82,7 @@ PetscErrorCode veloc_total(int dimensions)
 
 			Xi = 1.0 - vivi/PetscSqrtReal(sig1*sig2);
 
-			PetscPrintf(PETSC_COMM_WORLD,"      Xi = %lg %d\n\n",Xi,step);
+			PetscPrintf(PETSC_COMM_WORLD,"      Xi = %lg %d\n\n",Xi,step_nl);
 
 			VecCopy(Veloc_fut,Veloc_step1);
 
