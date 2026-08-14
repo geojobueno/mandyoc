@@ -18,8 +18,9 @@ extern double visc_MIN;
 
 extern PetscReal Xi_min;
 
+extern Vec Veloc_0, Veloc_0_copy;
 int step_nl = 0;
-extern PetscBool winkler;
+extern PetscBool winkler, init_winkler;
 extern PetscErrorCode calc_kinematic_winkler();
 
 PetscErrorCode veloc_total(int dimensions)
@@ -27,6 +28,13 @@ PetscErrorCode veloc_total(int dimensions)
 	PetscErrorCode ierr;
 
 	PetscFunctionBeginUser;
+
+	// winkler to modify basal b.c. (Veloc_0) with the restauration velocity
+	// maybe I should modify Veloc
+	if (dimensions==2 && winkler == PETSC_TRUE && init_winkler == PETSC_TRUE) {
+			VecCopy(Veloc_0,Veloc_0_copy);
+			ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
+	}
 
 	PetscPrintf(PETSC_COMM_WORLD,"\nSolving Stokes system:\n");
 
@@ -41,10 +49,6 @@ PetscErrorCode veloc_total(int dimensions)
 	}
 	else {
 
-		if (winkler == PETSC_TRUE) {
-			ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
-		}
-
 		VecCopy(Veloc_fut,Veloc_step1);
 
 		VecGetSize(Veloc_fut,&n);
@@ -56,9 +60,14 @@ PetscErrorCode veloc_total(int dimensions)
 
 		for (int step_nl=0; step_nl<700 && Xi>Xi_min; step_nl++){
 
+			
 			ierr = build_veloc(dimensions);CHKERRQ(ierr);
 
 			ierr = solve_veloc(dimensions);CHKERRQ(ierr);
+			
+			// if (dimensions == 2 && winkler == PETSC_TRUE && init_winkler == PETSC_TRUE) {
+			// 	VecCopy(Veloc_0_copy,Veloc_0);
+			// }
 
 			VecCopy(Veloc_fut,Veloc_step2);
 
@@ -88,6 +97,8 @@ PetscErrorCode veloc_total(int dimensions)
 
 		}
 	}
+
+	VecCopy(Veloc_0_copy,Veloc_0);
 
 	PetscFunctionReturn(0);
 

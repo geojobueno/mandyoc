@@ -270,7 +270,7 @@ PetscReal *N_z_Gauss;
 PetscInt print_visc;
 
 Mat VA, VB, VG;
-Vec Vf, Veloc, Veloc_fut,Veloc_weight,Veloc_0;
+Vec Vf, Veloc, Veloc_fut,Veloc_weight,Veloc_0,Veloc_0_copy;
 
 Vec Adiag;
 
@@ -412,6 +412,7 @@ PetscBool export_kappa = PETSC_FALSE;
 PetscBool export_lithology = PETSC_FALSE;
 
 PetscBool winkler = PETSC_TRUE;
+PetscBool init_winkler = PETSC_FALSE;
 PetscReal *basal_pressure_0 = NULL;
 PetscReal *basal_velocities = NULL;
 PetscReal c_winkler = 0.5;

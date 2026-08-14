@@ -91,7 +91,7 @@ extern long V_NE, V_GN, V_GT;
 extern long GaussQuad;
 
 extern Mat VA, VB, VG;
-extern Vec Vf,Vf_P, Veloc, Veloc_fut, Veloc_weight,Veloc_0;
+extern Vec Vf,Vf_P, Veloc, Veloc_fut, Veloc_weight,Veloc_0, Veloc_0_copy;
 
 extern Vec Veloc_step1;
 extern Vec Veloc_step2;
@@ -604,13 +604,7 @@ PetscErrorCode solve_veloc(int dimensions)
 
 	//write_veloc(101);
 
-	if (winkler == PETSC_TRUE) {
-		ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
-	}
-
-
 	ierr = MatMultTranspose(VG,Veloc_fut,rk_vec2);CHKERRQ(ierr); /// r0 = G^T V0
-
 
 	ierr = VecPointwiseMult(zk_vec2,Precon,rk_vec2); /// z0 = Precon*r0 = M^-1 *r0 <----
 

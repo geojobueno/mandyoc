@@ -243,9 +243,11 @@ int main(int argc,char **args)
 
 	if (dimensions == 2 && winkler==PETSC_TRUE){
 			ierr = get_basal_pressure_2d();CHKERRQ(ierr);
+			init_winkler=PETSC_TRUE;
 			//VecDestroy(&basal_pressure_0);
 			PetscPrintf(PETSC_COMM_WORLD, "*** TESTING BASAL RESTAURATION FORCES - GET BASAL PRESSURE ***\n");
 			//VecView(basal_pressure_0, PETSC_VIEWER_STDOUT_WORLD);
+			
 		}
 	
 	PetscPrintf(PETSC_COMM_WORLD,"\nWriting output files:\n");
