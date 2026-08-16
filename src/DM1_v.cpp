@@ -137,7 +137,7 @@ extern PetscReal rho_mantle; // density of the deepest layer
 extern PetscReal c_winkler;
 extern PetscBool winkler, init_winkler;
 extern PetscReal *basal_pressure_0;
-extern PetscReal *basal_velocities;
+extern PetscReal *basal_velocities, *previous_basal_velocities;
 extern Vec Veloc_0_copy;
 extern int step_nl;
 
@@ -645,57 +645,57 @@ PetscErrorCode AssembleF_Veloc_2d(Vec F,DM veloc_da,DM drho_da,Vec FP){
 }
 
 
-PetscErrorCode calc_winkler(){
-	Stokes2d					**VV;
+// PetscErrorCode calc_winkler(){
+// 	Stokes2d					**VV;
 
-	PetscInt               M,P;
-	PetscErrorCode         ierr;
+// 	PetscInt               M,P;
+// 	PetscErrorCode         ierr;
 
-	PetscInt               sex,sez,mx,mz;
-	PetscInt               ei,ek;
+// 	PetscInt               sex,sez,mx,mz;
+// 	PetscInt               ei,ek;
 
-	PetscInt i,k;
-
-
-	PetscFunctionBeginUser;
-	ierr = DMDAGetInfo(da_Veloc,0,&M,&P,NULL,0,0,0, 0,0,0,0,0,0);CHKERRQ(ierr);
-
-	ierr = VecZeroEntries(local_V);CHKERRQ(ierr);
-
-	ierr = DMGlobalToLocalBegin(da_Veloc,Veloc_0,INSERT_VALUES,local_V);
-	ierr = DMGlobalToLocalEnd(  da_Veloc,Veloc_0,INSERT_VALUES,local_V);
-
-	ierr = DMDAVecGetArray(da_Veloc,local_V,&VV);CHKERRQ(ierr);
-
-	PetscInt       sx,sz,mmx,mmz;
-
-	ierr = DMDAGetCorners(da_Veloc,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
+// 	PetscInt i,k;
 
 
-	PetscReal basal_velocity;
-	if (dt_calor_sec>0) basal_velocity = c_winkler*(Basal_Pressure0-Basal_Pressure)/(RHOM*gravity*dt_calor_sec); // 50% percent of the pressure adjustment
-	else basal_velocity = 0.0;
+// 	PetscFunctionBeginUser;
+// 	ierr = DMDAGetInfo(da_Veloc,0,&M,&P,NULL,0,0,0, 0,0,0,0,0,0);CHKERRQ(ierr);
 
-	for (k=sz; k<sz+mmz; k++) {
-		for (i=sx; i<sx+mmx; i++) {
+// 	ierr = VecZeroEntries(local_V);CHKERRQ(ierr);
 
-			if (k==0 || k==Nz-1){
-				VV[k][i].w = ((1-c_winkler)*VV[k][i].w) + (c_winkler * basal_velocity);
-			}
+// 	ierr = DMGlobalToLocalBegin(da_Veloc,Veloc_0,INSERT_VALUES,local_V);
+// 	ierr = DMGlobalToLocalEnd(  da_Veloc,Veloc_0,INSERT_VALUES,local_V);
 
-		}
-	}
-	PetscPrintf(PETSC_COMM_WORLD,"\nWinkler_velocity: %lg\n",basal_velocity);
+// 	ierr = DMDAVecGetArray(da_Veloc,local_V,&VV);CHKERRQ(ierr);
 
-	basal_velocity_previous = basal_velocity;
+// 	PetscInt       sx,sz,mmx,mmz;
 
-	ierr = DMDAVecRestoreArray(da_Veloc,local_V,&VV);CHKERRQ(ierr);
-	ierr = DMLocalToGlobalBegin(da_Veloc,local_V,INSERT_VALUES,Veloc_0);CHKERRQ(ierr);
-	ierr = DMLocalToGlobalEnd(da_Veloc,local_V,INSERT_VALUES,Veloc_0);CHKERRQ(ierr);
+// 	ierr = DMDAGetCorners(da_Veloc,&sx,&sz,NULL,&mmx,&mmz,NULL);CHKERRQ(ierr);
 
-	PetscFunctionReturn(0);
 
-}
+// 	PetscReal basal_velocity;
+// 	if (dt_calor_sec>0) basal_velocity = c_winkler*(Basal_Pressure0-Basal_Pressure)/(RHOM*gravity*dt_calor_sec); // 50% percent of the pressure adjustment
+// 	else basal_velocity = 0.0;
+
+// 	for (k=sz; k<sz+mmz; k++) {
+// 		for (i=sx; i<sx+mmx; i++) {
+
+// 			if (k==0 || k==Nz-1){
+// 				VV[k][i].w = ((1-c_winkler)*VV[k][i].w) + (c_winkler * basal_velocity);
+// 			}
+
+// 		}
+// 	}
+// 	PetscPrintf(PETSC_COMM_WORLD,"\nWinkler_velocity: %lg\n",basal_velocity);
+
+// 	basal_velocity_previous = basal_velocity;
+
+// 	ierr = DMDAVecRestoreArray(da_Veloc,local_V,&VV);CHKERRQ(ierr);
+// 	ierr = DMLocalToGlobalBegin(da_Veloc,local_V,INSERT_VALUES,Veloc_0);CHKERRQ(ierr);
+// 	ierr = DMLocalToGlobalEnd(da_Veloc,local_V,INSERT_VALUES,Veloc_0);CHKERRQ(ierr);
+
+// 	PetscFunctionReturn(0);
+
+// }
 
 PetscErrorCode calc_kinematic_winkler(){
 	PetscErrorCode ierr;
@@ -705,6 +705,13 @@ PetscErrorCode calc_kinematic_winkler(){
 	if (winkler != PETSC_TRUE || basal_pressure_0 == NULL || init_winkler != PETSC_TRUE) {
         PetscFunctionReturn(0);
     }
+
+	if (previous_basal_velocities == NULL){
+		ierr = PetscMalloc1(Nx, &previous_basal_velocities); CHKERRQ(ierr);
+		for (PetscInt i = 0; i < Nx; i++) {
+			previous_basal_velocities[i] = 0.0;
+		}
+	}
 
 	// get current pressure field
 	ierr = VecZeroEntries(local_P); CHKERRQ(ierr);
@@ -783,19 +790,45 @@ PetscErrorCode calc_kinematic_winkler(){
 	
 	MPI_Allreduce(local_basal_velocities, basal_velocities, Nx, MPIU_REAL, MPI_SUM, PETSC_COMM_WORLD);
 
+	int passes_smooth = 0;
+	PetscReal *vel_smooth;
+	ierr = PetscMalloc1(Nx, &vel_smooth); CHKERRQ(ierr);
+	for (int pass = 0; pass < passes_smooth; pass++) {
+		// vel_smooth[0] = basal_velocities[0];
+		// vel_smooth[Nx-1] = basal_velocities[Nx-1];
+		for (PetscInt i = 1; i < Nx-1; i++){
+			vel_smooth[i] = 0.25*basal_velocities[i-1]+
+									0.5*basal_velocities[i]+
+									0.25*basal_velocities[i+1];
+			// PetscPrintf(PETSC_COMM_WORLD, "%d - %lg\n", i, vel_smooth[i]);
+		}
+		vel_smooth[0]    = 0.75 * basal_velocities[0]    + 0.25 * basal_velocities[1];
+        vel_smooth[Nx-1] = 0.25 * basal_velocities[Nx-2] + 0.75 * basal_velocities[Nx-1];
+		
+	for (PetscInt i = 0; i < Nx; i++){
+		basal_velocities[i] = vel_smooth[i];
+		//
+		}
+	}
+	ierr = PetscFree(vel_smooth); CHKERRQ(ierr);
+
 	for (PetscInt k = sz; k < sz + mmz; k++) {
 		for (PetscInt i = sx; i < sx + mmx; i++) {
 			if (k == 0 || k == Nz-1) {
 
 			PetscReal bg_vel = VV_0_copy[k][i].w;
 
-			VV_0[k][i].w = bg_vel + basal_velocities[i];
-			VV_fut[k][i].w = bg_vel + basal_velocities[i];
+			VV_0[k][i].w = bg_vel + 0.5*previous_basal_velocities[i] + 0.5*basal_velocities[i];
+			VV_fut[k][i].w = bg_vel + 0.5*previous_basal_velocities[i] + 0.5*basal_velocities[i];
 
 			PetscPrintf(PETSC_COMM_WORLD, "Kinematic Winkler velocity at (k=%d, i=%d): %lg\n", k, i, basal_velocities[i]);
 			
 			}
 		}
+	}
+
+	for (PetscInt i=0; i<Nx;i++){
+		previous_basal_velocities[i] = basal_velocities[i];
 	}
 
 	ierr = PetscFree(local_basal_velocities); CHKERRQ(ierr);
@@ -816,6 +849,9 @@ PetscErrorCode calc_kinematic_winkler(){
 	
 	ierr = DMDAVecRestoreArray(da_Veloc, local_V_copy, &VV_0_copy); CHKERRQ(ierr);
     ierr = DMRestoreLocalVector(da_Veloc, &local_V_copy); CHKERRQ(ierr);
+
+
+	// destroy/free all local vector?
 
 	PetscFunctionReturn(0);
 
