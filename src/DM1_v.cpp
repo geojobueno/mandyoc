@@ -783,14 +783,16 @@ PetscErrorCode calc_kinematic_winkler(){
 				PetscReal winkler_velocity = c_winkler * (p_initial - p_current) / (rho_mantle * gravity * dt_calor_sec);
 				
 				local_basal_velocities[i] = winkler_velocity;
-				// PetscPrintf(PETSC_COMM_WORLD, "k=%d, i=%d, v_fix=%lg, dPdt=%lg\n", k, i, winkler_velocity, (p_initial - p_current));
+				if (i%5 == 0){
+				PetscPrintf(PETSC_COMM_WORLD, "k=%d, i=%d, v_fix=%lg, dPdt=%lg\n", k, i, winkler_velocity, (p_initial - p_current));
 				}
+			}
 			}
 		}
 	
 	MPI_Allreduce(local_basal_velocities, basal_velocities, Nx, MPIU_REAL, MPI_SUM, PETSC_COMM_WORLD);
 
-	int passes_smooth = 0;
+	int passes_smooth = 30;
 	PetscReal *vel_smooth;
 	ierr = PetscMalloc1(Nx, &vel_smooth); CHKERRQ(ierr);
 	for (int pass = 0; pass < passes_smooth; pass++) {
@@ -818,11 +820,12 @@ PetscErrorCode calc_kinematic_winkler(){
 
 			PetscReal bg_vel = VV_0_copy[k][i].w;
 
-			VV_0[k][i].w = bg_vel + 0.5*previous_basal_velocities[i] + 0.5*basal_velocities[i];
-			VV_fut[k][i].w = bg_vel + 0.5*previous_basal_velocities[i] + 0.5*basal_velocities[i];
-
-			PetscPrintf(PETSC_COMM_WORLD, "Kinematic Winkler velocity at (k=%d, i=%d): %lg\n", k, i, basal_velocities[i]);
+			VV_0[k][i].w = bg_vel + 0.75*previous_basal_velocities[i] + 0.25*basal_velocities[i];
+			VV_fut[k][i].w = bg_vel + 0.75*previous_basal_velocities[i] + 0.25*basal_velocities[i];
 			
+			if (i%5 == 0){
+			PetscPrintf(PETSC_COMM_WORLD, "Kinematic Winkler velocity at (k=%d, i=%d): %lg\n", k, i, basal_velocities[i]);
+			}
 			}
 		}
 	}

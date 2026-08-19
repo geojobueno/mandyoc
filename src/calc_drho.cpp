@@ -353,13 +353,13 @@ PetscErrorCode get_basal_pressure_2d(){
     ierr = DMGlobalToLocalEnd(da_Veloc, Pressure, INSERT_VALUES, local_P); CHKERRQ(ierr);
     ierr = DMDAVecGetArray(da_Veloc, local_P, &pp); CHKERRQ(ierr);
 
-    // getting indexes for each element corner in the local domain
-    PetscInt sex, sez, mx, mz;
-    ierr = DMDAGetElementCorners_2d(da_Veloc, &sex, &sez, &mx, &mz); CHKERRQ(ierr);
+    // getting indexes for each element in the local domain
+    PetscInt sx, sz, mmx, mmz;
+    ierr = DMDAGetCorners(da_Veloc, &sx, &sz, NULL, &mmx, &mmz, NULL); CHKERRQ(ierr);
 
 	// similar to shift_pressure_2d, we will average the pressures from the elements surrounding each node at the basal boundary
-    if (sez == 0) { // at the bottom
-        for (PetscInt i = sex; i < sex + mx + 1; i++) {
+    if (sz == 0) { // at the bottom
+        for (PetscInt i = sx; i < sx + mmx; i++) {
             PetscReal p_nodal = 0.0;
             PetscInt cont = 0;
             
