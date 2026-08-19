@@ -720,24 +720,24 @@ PetscErrorCode calc_kinematic_winkler(){
     ierr = DMDAVecGetArray(da_Veloc, local_P, &pp); CHKERRQ(ierr);
 
 	// get Veloc_0 field
-	Vec local_V_0;
-    ierr = DMGetLocalVector(da_Veloc, &local_V_0); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalBegin(da_Veloc, Veloc_0, INSERT_VALUES, local_V_0); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(da_Veloc, Veloc_0, INSERT_VALUES, local_V_0); CHKERRQ(ierr);
-    ierr = DMDAVecGetArray(da_Veloc, local_V_0, &VV_0); CHKERRQ(ierr);
+	// Vec local_V_0;
+    // ierr = DMGetLocalVector(da_Veloc, &local_V_0); CHKERRQ(ierr);
+    // ierr = DMGlobalToLocalBegin(da_Veloc, Veloc_0, INSERT_VALUES, local_V_0); CHKERRQ(ierr);
+    // ierr = DMGlobalToLocalEnd(da_Veloc, Veloc_0, INSERT_VALUES, local_V_0); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da_Veloc, Veloc_0, &VV_0); CHKERRQ(ierr);
 
 	// get Veloc_0 field
-	Vec local_V_fut;
-    ierr = DMGetLocalVector(da_Veloc, &local_V_fut); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalBegin(da_Veloc, Veloc_fut, INSERT_VALUES, local_V_fut); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(da_Veloc, Veloc_fut, INSERT_VALUES, local_V_fut); CHKERRQ(ierr);
-    ierr = DMDAVecGetArray(da_Veloc, local_V_fut, &VV_fut); CHKERRQ(ierr);
+	// Vec local_V_fut;
+    // ierr = DMGetLocalVector(da_Veloc, &local_V_fut); CHKERRQ(ierr);
+    // ierr = DMGlobalToLocalBegin(da_Veloc, Veloc_fut, INSERT_VALUES, local_V_fut); CHKERRQ(ierr);
+    // ierr = DMGlobalToLocalEnd(da_Veloc, Veloc_fut, INSERT_VALUES, local_V_fut); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da_Veloc, Veloc_fut, &VV_fut); CHKERRQ(ierr);
 
-	Vec local_V_copy;
-	ierr = DMGetLocalVector(da_Veloc, &local_V_copy); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalBegin(da_Veloc, Veloc_0_copy, INSERT_VALUES, local_V_copy); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(da_Veloc, Veloc_0_copy, INSERT_VALUES, local_V_copy); CHKERRQ(ierr);
-    ierr = DMDAVecGetArray(da_Veloc, local_V_copy, &VV_0_copy); CHKERRQ(ierr);
+	// Vec local_V_copy;
+	// ierr = DMGetLocalVector(da_Veloc, &local_V_copy); CHKERRQ(ierr);
+    // ierr = DMGlobalToLocalBegin(da_Veloc, Veloc_0_copy, INSERT_VALUES, local_V_copy); CHKERRQ(ierr);
+    // ierr = DMGlobalToLocalEnd(da_Veloc, Veloc_0_copy, INSERT_VALUES, local_V_copy); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da_Veloc, Veloc_0_copy, &VV_0_copy); CHKERRQ(ierr);
 
 	// Get Veloc vector
 	// Vec local_V_curr;
@@ -784,7 +784,7 @@ PetscErrorCode calc_kinematic_winkler(){
 				
 				local_basal_velocities[i] = winkler_velocity;
 				if (i%5 == 0){
-				PetscPrintf(PETSC_COMM_WORLD, "k=%d, i=%d, v_fix=%lg, dPdt=%lg\n", k, i, winkler_velocity, (p_initial - p_current));
+				PetscPrintf(PETSC_COMM_WORLD, "(k=%d,i=%d): v_fix=%lg, P0=%lg, Pc=%lg, dPdt=%lg\n", k, i, winkler_velocity,p_initial,p_current, -(p_initial - p_current));
 				}
 			}
 			}
@@ -792,7 +792,7 @@ PetscErrorCode calc_kinematic_winkler(){
 	
 	MPI_Allreduce(local_basal_velocities, basal_velocities, Nx, MPIU_REAL, MPI_SUM, PETSC_COMM_WORLD);
 
-	int passes_smooth = 30;
+	int passes_smooth = 20;
 	PetscReal *vel_smooth;
 	ierr = PetscMalloc1(Nx, &vel_smooth); CHKERRQ(ierr);
 	for (int pass = 0; pass < passes_smooth; pass++) {
@@ -824,8 +824,8 @@ PetscErrorCode calc_kinematic_winkler(){
 			VV_0[k][i].w = bg_vel + thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
 			VV_fut[k][i].w = bg_vel + thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
 			
-			if (i%5 == 0){
-			PetscPrintf(PETSC_COMM_WORLD, "Kinematic Winkler velocity at (k=%d, i=%d): %lg\n", k, i, basal_velocities[i]);
+			if (k==0 && i%5 == 0){
+			PetscPrintf(PETSC_COMM_WORLD, "Vels (k=%d, i=%d) bgv %lg, prv %lg, smv %lg\n", k, i, bg_vel, previous_basal_velocities[i], basal_velocities[i]);
 			}
 			}
 		}
@@ -840,19 +840,19 @@ PetscErrorCode calc_kinematic_winkler(){
 
 	ierr = DMDAVecRestoreArray(da_Veloc, local_P, &pp); CHKERRQ(ierr);
     
-    ierr = DMDAVecRestoreArray(da_Veloc, local_V_0, &VV_0); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalBegin(da_Veloc, local_V_0, INSERT_VALUES, Veloc_0); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(da_Veloc, local_V_0, INSERT_VALUES, Veloc_0); CHKERRQ(ierr);
-	ierr = DMRestoreLocalVector(da_Veloc, &local_V_0); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArray(da_Veloc, Veloc_0, &VV_0); CHKERRQ(ierr);
+    // ierr = DMLocalToGlobalBegin(da_Veloc, local_V_0, INSERT_VALUES, Veloc_0); CHKERRQ(ierr);
+    // ierr = DMLocalToGlobalEnd(da_Veloc, local_V_0, INSERT_VALUES, Veloc_0); CHKERRQ(ierr);
+	// ierr = DMRestoreLocalVector(da_Veloc, &local_V_0); CHKERRQ(ierr);
 
-	ierr = DMDAVecRestoreArray(da_Veloc, local_V_fut, &VV_fut); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalBegin(da_Veloc, local_V_fut, INSERT_VALUES, Veloc_fut); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(da_Veloc, local_V_fut, INSERT_VALUES, Veloc_fut); CHKERRQ(ierr);
-	ierr = DMRestoreLocalVector(da_Veloc, &local_V_fut); CHKERRQ(ierr);
+	ierr = DMDAVecRestoreArray(da_Veloc, Veloc_fut, &VV_fut); CHKERRQ(ierr);
+    // ierr = DMLocalToGlobalBegin(da_Veloc, local_V_fut, INSERT_VALUES, Veloc_fut); CHKERRQ(ierr);
+    // ierr = DMLocalToGlobalEnd(da_Veloc, local_V_fut, INSERT_VALUES, Veloc_fut); CHKERRQ(ierr);
+	// ierr = DMRestoreLocalVector(da_Veloc, &local_V_fut); CHKERRQ(ierr);
 
 	
-	ierr = DMDAVecRestoreArray(da_Veloc, local_V_copy, &VV_0_copy); CHKERRQ(ierr);
-    ierr = DMRestoreLocalVector(da_Veloc, &local_V_copy); CHKERRQ(ierr);
+	ierr = DMDAVecRestoreArray(da_Veloc, Veloc_0_copy, &VV_0_copy); CHKERRQ(ierr);
+    // ierr = DMRestoreLocalVector(da_Veloc, &local_V_copy); CHKERRQ(ierr);
 
 
 	// destroy/free all local vector?

@@ -416,7 +416,7 @@ PetscBool init_winkler = PETSC_FALSE;
 PetscReal *basal_pressure_0 = NULL;
 PetscReal *basal_velocities = NULL;
 PetscReal *previous_basal_velocities = NULL;
-PetscReal c_winkler = 0.5;
+PetscReal c_winkler = 0.75;
 PetscReal rho_mantle;
 
 // PetscReal basal_velocity_previous=0.0;

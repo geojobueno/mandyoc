@@ -524,10 +524,6 @@ PetscErrorCode build_veloc(int dimensions)
 			ierr = calc_pressure_3d();
 			ierr = shift_pressure_3d();
 		}
-
-		ierr = get_basal_pressure_2d();CHKERRQ(ierr);
-		PetscPrintf(PETSC_COMM_WORLD, "*** TESTING BASAL RESTAURATION FORCES - GET BASAL PRESSURE ***\n");
-		
 		write_pressure(-1,binary_output);
 		
 	}

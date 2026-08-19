@@ -202,6 +202,11 @@ int main(int argc,char **args)
 			calc_drho(); // CHECK: does need this call here?
 	}
 
+	if (dimensions == 2 && winkler==PETSC_TRUE){
+			init_winkler=PETSC_TRUE;
+			PetscPrintf(PETSC_COMM_WORLD, "init_winkler=TRUE\n\n");
+		}
+
 	// Gerya p. 215
 	if (visc_MAX>visc_MIN && initial_dynamic_range>0){
 		double visc_contrast = PetscLog10Real(visc_MAX/visc_MIN);
@@ -240,12 +245,9 @@ int main(int argc,char **args)
 	}
 
 	PetscPrintf(PETSC_COMM_WORLD,"Solution of the pressure and velocity fields: done\n");
-
-	if (dimensions == 2 && winkler==PETSC_TRUE){
-			init_winkler=PETSC_TRUE;
-			PetscPrintf(PETSC_COMM_WORLD, "init_winkler=TRUE");
-		}
 	
+	ierr = get_basal_pressure_2d();CHKERRQ(ierr);
+
 	PetscPrintf(PETSC_COMM_WORLD,"\nWriting output files:\n");
 	ierr = write_veloc(tcont,binary_output);
 	ierr = write_veloc_cond(tcont,binary_output);
