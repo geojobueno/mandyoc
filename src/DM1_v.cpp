@@ -819,9 +819,10 @@ PetscErrorCode calc_kinematic_winkler(){
 			if (k == 0 || k == Nz-1) {
 
 			PetscReal bg_vel = VV_0_copy[k][i].w;
+			PetscReal thetat_winkler = 0.5; // theta factor in time 
 
-			VV_0[k][i].w = bg_vel + 0.75*previous_basal_velocities[i] + 0.25*basal_velocities[i];
-			VV_fut[k][i].w = bg_vel + 0.75*previous_basal_velocities[i] + 0.25*basal_velocities[i];
+			VV_0[k][i].w = bg_vel + thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
+			VV_fut[k][i].w = bg_vel + thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
 			
 			if (i%5 == 0){
 			PetscPrintf(PETSC_COMM_WORLD, "Kinematic Winkler velocity at (k=%d, i=%d): %lg\n", k, i, basal_velocities[i]);

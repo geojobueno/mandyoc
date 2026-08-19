@@ -80,7 +80,7 @@ PetscErrorCode moveSwarm(int dimensions, PetscReal dt);
 PetscErrorCode Swarm2Mesh_2d();
 PetscErrorCode Swarm2Mesh_3d();
 
-
+PetscErrorCode get_basal_pressure_2d();
 
 extern double r06;
 extern double r8p9;
@@ -525,7 +525,11 @@ PetscErrorCode build_veloc(int dimensions)
 			ierr = shift_pressure_3d();
 		}
 
+		ierr = get_basal_pressure_2d();CHKERRQ(ierr);
+		PetscPrintf(PETSC_COMM_WORLD, "*** TESTING BASAL RESTAURATION FORCES - GET BASAL PRESSURE ***\n");
+		
 		write_pressure(-1,binary_output);
+		
 	}
 		
 	ierr = moveSwarm(dimensions, 0.0);
