@@ -700,7 +700,7 @@ PetscErrorCode AssembleF_Veloc_2d(Vec F,DM veloc_da,DM drho_da,Vec FP){
 PetscErrorCode calc_kinematic_winkler(){
 	PetscErrorCode ierr;
 	Stokes2d **VV_0, **VV_0_copy, **VV_fut, **pp;
-	PetscReal *basal_velocities, *local_basal_velocities;
+	PetscReal *basal_velocities, *local_basal_velocities, dt_isostasy;
 	
 	if (winkler != PETSC_TRUE || basal_pressure_0 == NULL || init_winkler != PETSC_TRUE) {
         PetscFunctionReturn(0);
@@ -766,6 +766,11 @@ PetscErrorCode calc_kinematic_winkler(){
 		local_basal_velocities[i] = 0.0;
 	}
 
+
+	if (dt_calor_sec >= 1000*seg_per_ano){
+		dt_isostasy=dt_calor_sec;} 
+	else{dt_isostasy=10000*seg_per_ano;}
+
 	for (PetscInt k = sz; k < sz + mmz; k++) {
 		for (PetscInt i = sx; i < sx + mmx; i++) {
 			if (k==0){
@@ -780,7 +785,7 @@ PetscErrorCode calc_kinematic_winkler(){
 
 				p_current /= cont;
 
-				PetscReal winkler_velocity = c_winkler * (p_initial - p_current) / (rho_mantle * gravity * dt_calor_sec);
+				PetscReal winkler_velocity = c_winkler * (p_initial - p_current) / (rho_mantle * gravity * dt_isostasy);
 				
 				local_basal_velocities[i] = winkler_velocity;
 				if (i%5 == 0){
