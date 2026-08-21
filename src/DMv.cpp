@@ -170,6 +170,7 @@ extern int n_interfaces;
 
 extern PetscInt binary_output;
 extern int step_nl;
+extern PetscReal *previous_basal_velocities, *basal_pressure_0;
 
 PetscErrorCode create_veloc(int dimensions, PetscInt mx, PetscInt my, PetscInt mz, PetscInt Px, PetscInt Py, PetscInt Pz)
 {
@@ -524,7 +525,7 @@ PetscErrorCode build_veloc(int dimensions)
 			ierr = calc_pressure_3d();
 			ierr = shift_pressure_3d();
 		}
-		ierr = get_basal_pressure_2d();CHKERRQ(ierr);
+
 		write_pressure(-1,binary_output);
 		
 	}
@@ -688,11 +689,18 @@ PetscErrorCode destroy_veloc()
 	ierr = VecDestroy(&Veloc_weight);CHKERRQ(ierr);
 	ierr = VecDestroy(&Veloc_fut);CHKERRQ(ierr);
 	ierr = VecDestroy(&Veloc);CHKERRQ(ierr);
+	ierr = VecDestroy(&Veloc_0);CHKERRQ(ierr);
+	ierr = VecDestroy(&Veloc_0_copy);CHKERRQ(ierr);
 	ierr = VecDestroy(&Vf);CHKERRQ(ierr);
 	ierr = VecDestroy(&Vf_P);CHKERRQ(ierr);
 	ierr = MatDestroy(&VA);CHKERRQ(ierr);
 	ierr = MatDestroy(&VB);CHKERRQ(ierr);
 	ierr = DMDestroy(&da_Veloc);CHKERRQ(ierr);
+	
+	// Free of restauration vecs 
+	ierr = PetscFree(basal_pressure_0);CHKERRQ(ierr);
+	ierr = PetscFree(previous_basal_velocities);CHKERRQ(ierr);
+	
 
 	PetscTime(&Tempo2);
 	PetscPrintf(PETSC_COMM_WORLD, "Velocity field (destroying): %lf s\n",Tempo2-Tempo1);

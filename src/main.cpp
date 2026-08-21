@@ -242,6 +242,7 @@ int main(int argc,char **args)
 	PetscPrintf(PETSC_COMM_WORLD,"Solution of the pressure and velocity fields: done\n");
 	
 	if (dimensions == 2 && winkler==PETSC_TRUE){
+			ierr = get_basal_pressure_2d();CHKERRQ(ierr);
 			init_winkler=PETSC_TRUE;
 			PetscPrintf(PETSC_COMM_WORLD, "init_winkler=TRUE\n\n");
 		}

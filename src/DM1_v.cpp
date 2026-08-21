@@ -797,7 +797,8 @@ PetscErrorCode calc_kinematic_winkler(){
 	
 	MPI_Allreduce(local_basal_velocities, basal_velocities, Nx, MPIU_REAL, MPI_SUM, PETSC_COMM_WORLD);
 
-	int passes_smooth = 20;
+	//  N = 2 * (r/dx)**2
+	int passes_smooth = 18; // -> r is the characteristic length of our smooth (~3dx)
 	PetscReal *vel_smooth;
 	ierr = PetscMalloc1(Nx, &vel_smooth); CHKERRQ(ierr);
 	for (int pass = 0; pass < passes_smooth; pass++) {
@@ -819,12 +820,13 @@ PetscErrorCode calc_kinematic_winkler(){
 	}
 	ierr = PetscFree(vel_smooth); CHKERRQ(ierr);
 
+	PetscReal thetat_winkler = 0.75; // theta factor in time 
 	for (PetscInt k = sz; k < sz + mmz; k++) {
 		for (PetscInt i = sx; i < sx + mmx; i++) {
 			if (k == 0 || k == Nz-1) {
 
 			PetscReal bg_vel = VV_0_copy[k][i].w;
-			PetscReal thetat_winkler = 0.5; // theta factor in time 
+			
 
 			VV_0[k][i].w = bg_vel + thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
 			VV_fut[k][i].w = bg_vel + thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
@@ -837,7 +839,7 @@ PetscErrorCode calc_kinematic_winkler(){
 	}
 
 	for (PetscInt i=0; i<Nx;i++){
-		previous_basal_velocities[i] = basal_velocities[i];
+		previous_basal_velocities[i] = thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
 	}
 
 	ierr = PetscFree(local_basal_velocities); CHKERRQ(ierr);
