@@ -646,7 +646,7 @@ PetscErrorCode calc_kinematic_winkler(){
 	Stokes2d **VV_0, **VV_0_copy, **VV_fut, **pp;
 	PetscReal *basal_velocities, *local_basal_velocities, dt_isostasy;
 	
-	if (c_winkler > 0 || basal_pressure_0 == NULL || init_winkler != PETSC_TRUE) {
+	if (c_winkler <= 0 || basal_pressure_0 == NULL || init_winkler != PETSC_TRUE) {
         PetscFunctionReturn(0);
     }
 
