@@ -129,16 +129,14 @@ extern PetscInt periodic_boundary;
 extern PetscReal veloc0_scaled;
 
 
-extern PetscReal RHOM; //!!! Change to the density of the deepest layer
+// Variables for basal restoration force (winkler) 
 extern PetscReal rho_mantle; // density of the deepest layer
-
-extern PetscReal basal_velocity_previous;
-extern PetscReal c_winkler;
+extern PetscReal c_winkler, thetat_winkler;
 extern PetscBool init_winkler;
 extern PetscReal *basal_pressure_0;
 extern PetscReal *previous_basal_velocities;
 extern Vec Veloc_0_copy;
-extern int step_nl;
+extern int passes_smooth;
 
 PetscErrorCode AssembleA_Veloc_2d(Mat A,Mat AG,DM veloc_da, DM temper_da){
 
@@ -720,7 +718,7 @@ PetscErrorCode calc_kinematic_winkler(){
 	MPI_Allreduce(local_basal_velocities, basal_velocities, Nx, MPIU_REAL, MPI_SUM, PETSC_COMM_WORLD);
 
 	//  N = 2 * (r/dx)**2
-	int passes_smooth = 18; // -> r is the characteristic length of our smooth (~3dx)
+	// int passes_smooth = 18; // -> r is the characteristic length of our smooth (~3dx)
 	PetscReal *vel_smooth;
 	ierr = PetscMalloc1(Nx, &vel_smooth); CHKERRQ(ierr);
 	for (int pass = 0; pass < passes_smooth; pass++) {
@@ -740,7 +738,7 @@ PetscErrorCode calc_kinematic_winkler(){
 	}
 	ierr = PetscFree(vel_smooth); CHKERRQ(ierr);
 
-	PetscReal thetat_winkler = 0.75; // theta factor in time 
+	//PetscReal thetat_winkler = 0.75; // theta factor in time 
 	for (PetscInt k = sz; k < sz + mmz; k++) {
 		for (PetscInt i = sx; i < sx + mmx; i++) {
 			if (k == 0 || k == Nz-1) {

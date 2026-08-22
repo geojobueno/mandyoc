@@ -411,11 +411,13 @@ PetscBool export_kappa = PETSC_FALSE;
 
 PetscBool export_lithology = PETSC_FALSE;
 
-// Variables used to apply restauration basal force (i.e. winkler) - Joao Bueno
+// Variables used to apply restoration basal force (i.e. winkler) - Joao Bueno
 PetscBool init_winkler = PETSC_FALSE;
 PetscReal *basal_pressure_0 = NULL;
 PetscReal *previous_basal_velocities = NULL;
 PetscReal c_winkler = 1.0;
+int passes_smooth = 18;
+PetscReal thetat_winkler = 0.9;
 PetscReal rho_mantle;
 
 
