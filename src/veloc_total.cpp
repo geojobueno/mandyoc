@@ -20,7 +20,8 @@ extern PetscReal Xi_min;
 
 extern Vec Veloc_0, Veloc_0_copy;
 int step_nl = 0;
-extern PetscBool winkler, init_winkler;
+extern PetscBool init_winkler;
+extern PetscReal c_winkler;
 extern PetscErrorCode calc_kinematic_winkler();
 
 PetscErrorCode veloc_total(int dimensions)
@@ -29,9 +30,9 @@ PetscErrorCode veloc_total(int dimensions)
 
 	PetscFunctionBeginUser;
 
-	// winkler to modify basal b.c. (Veloc_0) with the restauration velocity
-	// maybe I should modify Veloc
-	if (dimensions==2 && winkler == PETSC_TRUE && init_winkler == PETSC_TRUE) {
+	// winkler to modify basal b.c. (Veloc_0 and Veloc_fut) with the restauration velocity
+
+	if (dimensions==2 && c_winkler > 0 && init_winkler == PETSC_TRUE) {
 			VecCopy(Veloc_0,Veloc_0_copy);
 			ierr = calc_kinematic_winkler(); CHKERRQ(ierr);
 	}
@@ -64,10 +65,6 @@ PetscErrorCode veloc_total(int dimensions)
 			ierr = build_veloc(dimensions);CHKERRQ(ierr);
 
 			ierr = solve_veloc(dimensions);CHKERRQ(ierr);
-			
-			// if (dimensions == 2 && winkler == PETSC_TRUE && init_winkler == PETSC_TRUE) {
-			// 	VecCopy(Veloc_0_copy,Veloc_0);
-			// }
 
 			VecCopy(Veloc_fut,Veloc_step2);
 

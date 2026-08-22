@@ -118,7 +118,6 @@ extern PetscReal aggradation_rate;
 extern PetscBool magmatism_flag;
 extern PetscBool magmatism_extraction_flag;
 extern PetscInt magmatic_layer;
-extern PetscBool winkler;
 
 extern PetscReal c_winkler;
 extern PetscReal rho_mantle;
@@ -283,7 +282,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "continental_slope") ==0) {continental_slope = atof(tkn_v);}
 			else if (strcmp(tkn_w, "strain_sed") ==0) {strain_sed = atof(tkn_v);}
 			else if (strcmp(tkn_w, "aggradation_rate") ==0) {aggradation_rate = atof(tkn_v);}
-
+			
 			// String parameters
 			else if (strcmp(tkn_w, "sp_mode") == 0) {sp_mode = sp_mode_from_string(tkn_v);}
 
@@ -341,8 +340,6 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "magmatic_layer") == 0) {magmatic_layer = atoi(tkn_v);}
 
 			else if (strcmp(tkn_w, "export_lithology") == 0) {export_lithology = check_a_b_bool(tkn_w, tkn_v, "True", "False");}
-
-			else if (strcmp(tkn_w, "winkler") == 0) {winkler = check_a_b_bool(tkn_w, tkn_v, "True", "False");}
 
 			else if (strcmp(tkn_w, "high_kappa_in_asthenosphere") == 0) {high_kappa_in_asthenosphere = check_a_b(tkn_w, tkn_v, "True", "False");}
 
@@ -524,8 +521,6 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&magmatic_layer,1,MPI_INT,0,PETSC_COMM_WORLD);
 
 	MPI_Bcast(&export_lithology,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
-
-	MPI_Bcast(&winkler,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
 
 	MPI_Bcast(&non_dim,1,MPI_INT,0,PETSC_COMM_WORLD);
 

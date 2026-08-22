@@ -65,12 +65,9 @@ PetscErrorCode sp_destroy();
 PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
 PetscErrorCode validate_sp_mode_combination(PetscBool sp_enabled, SP_Mode mode);
 
-PetscReal calc_mean_basal_pressure_2d();
-PetscErrorCode get_basal_pressure_2d(); 
 PetscErrorCode calc_magmatic_extraction();
 
-PetscReal calc_mean_basal_pressure_2d();
-// PetscErrorCode calc_winkler();
+PetscErrorCode get_basal_pressure_2d(); 
 PetscErrorCode calc_kinematic_winkler();
 
 int main(int argc,char **args)
@@ -241,7 +238,7 @@ int main(int argc,char **args)
 
 	PetscPrintf(PETSC_COMM_WORLD,"Solution of the pressure and velocity fields: done\n");
 	
-	if (dimensions == 2 && winkler==PETSC_TRUE){
+	if (dimensions == 2 && c_winkler > 0){
 			ierr = get_basal_pressure_2d();CHKERRQ(ierr);
 			init_winkler=PETSC_TRUE;
 			PetscPrintf(PETSC_COMM_WORLD, "init_winkler=TRUE\n\n");
@@ -306,10 +303,6 @@ int main(int argc,char **args)
 		if (dimensions == 2 && ((sp_mode == SP_SEDIMENTATION_RATE_LIMITED)||(sp_mode == SP_THEUNISSEN_SEDIMENTATION))) {
 			ierr = sp_update_sedimentation_rate(tempo);
 			PetscPrintf(PETSC_COMM_WORLD,"sedimentation rate = %.3g m^2/yr, active sediment layer = %d\n", sedimentation_rate, active_sediment_layer);
-		}
-
-		if (dimensions == 2 && winkler==PETSC_TRUE){
-			Basal_Pressure = calc_mean_basal_pressure_2d(); ///!!! Not yet implementer for 3D
 		}
 
 		ierr = build_thermal(dimensions);CHKERRQ(ierr);

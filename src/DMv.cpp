@@ -25,8 +25,6 @@ extern int bcv_front_slip;
 extern PetscInt bcv_extern;
 
 extern PetscInt visc_const_per_element;
-extern PetscErrorCode calc_kinematic_winkler();
-extern PetscBool winkler;
 
 typedef struct {
 	PetscScalar u;
