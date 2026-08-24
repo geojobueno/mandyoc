@@ -137,6 +137,7 @@ extern PetscReal *basal_pressure_0;
 extern PetscReal *previous_basal_velocities;
 extern Vec Veloc_0_copy;
 extern int passes_smooth;
+extern double dt_MAX;
 
 PetscErrorCode AssembleA_Veloc_2d(Mat A,Mat AG,DM veloc_da, DM temper_da){
 
@@ -644,7 +645,7 @@ PetscErrorCode AssembleF_Veloc_2d(Vec F,DM veloc_da,DM drho_da,Vec FP){
 PetscErrorCode calc_kinematic_winkler(){
 	PetscErrorCode ierr;
 	Stokes2d **VV_0, **VV_0_copy, **VV_fut, **pp;
-	PetscReal *basal_velocities, *local_basal_velocities, dt_isostasy;
+	PetscReal *basal_velocities, *local_basal_velocities;
 	
 	if (c_winkler <= 0 || basal_pressure_0 == NULL || init_winkler != PETSC_TRUE) {
         PetscFunctionReturn(0);
@@ -686,11 +687,21 @@ PetscErrorCode calc_kinematic_winkler(){
 		local_basal_velocities[i] = 0.0;
 	}
 
+	// Variables to use in traction restoration
+	// the correction should be smoothed/lower for small dt's	
+	PetscReal local_c_winkler = c_winkler;
+	PetscReal local_dt_sec = dt_calor_sec;
+	PetscReal local_thetat = thetat_winkler;
 
-	if (dt_calor_sec >= 1000*seg_per_ano){
-		dt_isostasy=dt_calor_sec;} 
-	else{dt_isostasy=10000*seg_per_ano;}
-
+	// Threshold for filtering of instabilities of small time steps (10% of dt_MAX)
+	if (dt_calor_sec <= 0.1*dt_MAX){
+		local_c_winkler=0.25*c_winkler; // just 1/4 of the necessary restoration
+		local_dt_sec = 10000*seg_per_ano;  // virtual dt to decrease restored velocity
+		local_thetat = 0.9;  // temporal smooth
+		PetscPrintf(PETSC_COMM_WORLD, "small dt (%lg yr) for basal restoration!\nC: %lg; thetat_winkler: %lg;\n",local_dt_sec/seg_per_ano,local_c_winkler,local_thetat);
+	}
+	
+	
 	for (PetscInt k = sz; k < sz + mmz; k++) {
 		for (PetscInt i = sx; i < sx + mmx; i++) {
 			if (k==0){
@@ -705,11 +716,11 @@ PetscErrorCode calc_kinematic_winkler(){
 
 				p_current /= cont;
 
-				PetscReal winkler_velocity = c_winkler * (p_initial - p_current) / (rho_mantle * gravity * dt_isostasy);
+				PetscReal winkler_velocity = local_c_winkler * (p_initial - p_current) / (rho_mantle * gravity * local_dt_sec);
 				
 				local_basal_velocities[i] = winkler_velocity;
 				if (i%5 == 0){
-				PetscPrintf(PETSC_COMM_WORLD, "(k=%d,i=%d): v_fix=%lg, P0=%lg, Pc=%lg, dPdt=%lg\n", k, i, winkler_velocity,p_initial,p_current, -(p_initial - p_current));
+				PetscPrintf(PETSC_COMM_WORLD, "(k=%d,i=%d): v_fix=%lg, P0=%lg, Pc=%lg, dP=%lg\n", k, i, winkler_velocity,p_initial,p_current, -(p_initial - p_current));
 				}
 			}
 			}
@@ -746,8 +757,8 @@ PetscErrorCode calc_kinematic_winkler(){
 			PetscReal bg_vel = VV_0_copy[k][i].w;
 			
 
-			VV_0[k][i].w = bg_vel + thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
-			VV_fut[k][i].w = bg_vel + thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
+			VV_0[k][i].w = bg_vel + local_thetat*previous_basal_velocities[i] + (1-local_thetat)*basal_velocities[i];
+			VV_fut[k][i].w = bg_vel + local_thetat*previous_basal_velocities[i] + (1-local_thetat)*basal_velocities[i];
 			
 			if (k==0 && i%5 == 0){
 			PetscPrintf(PETSC_COMM_WORLD, "Vels (k=%d, i=%d) bgv %lg, prv %lg, smv %lg\n", k, i, bg_vel, previous_basal_velocities[i], basal_velocities[i]);
@@ -757,7 +768,7 @@ PetscErrorCode calc_kinematic_winkler(){
 	}
 
 	for (PetscInt i=0; i<Nx;i++){
-		previous_basal_velocities[i] = thetat_winkler*previous_basal_velocities[i] + (1-thetat_winkler)*basal_velocities[i];
+		previous_basal_velocities[i] = local_thetat*previous_basal_velocities[i] + (1-local_thetat)*basal_velocities[i];
 	}
 
 	ierr = PetscFree(local_basal_velocities); CHKERRQ(ierr);
