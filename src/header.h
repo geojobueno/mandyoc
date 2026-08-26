@@ -419,7 +419,9 @@ PetscReal c_winkler = 1.0;
 int passes_smooth = 18;
 PetscReal thetat_winkler = 0.9;
 PetscReal rho_mantle;
-
+PetscReal wink_visc_factor = 1; // a viscosity factor relating to the minimum viscosity.
+PetscReal wink_layer_n = 5;
+PetscReal wink_layer_depth;
 
 // surface processes
 DM dmcell_s;

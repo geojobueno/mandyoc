@@ -115,6 +115,7 @@ extern PetscReal continental_slope;
 extern PetscReal strain_sed;
 extern PetscReal aggradation_rate;
 
+// Magmatismo flags
 extern PetscBool magmatism_flag;
 extern PetscBool magmatism_extraction_flag;
 extern PetscInt magmatic_layer;
@@ -124,6 +125,9 @@ extern PetscReal c_winkler;
 extern PetscReal thetat_winkler;
 extern int passes_smooth;
 extern PetscReal rho_mantle;
+extern PetscReal wink_layer_n;
+extern PetscReal wink_visc_factor;
+extern PetscReal wink_layer_depth;
 
 // Removed from parameter file
 extern double H_lito;
@@ -288,6 +292,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "c_winkler") ==0) {c_winkler = atof(tkn_v);}
 			else if (strcmp(tkn_w, "theta_winkler") ==0) {thetat_winkler = atof(tkn_v);}
 			else if (strcmp(tkn_w, "N_basal_vel_smooth") ==0) {passes_smooth = atoi(tkn_v);}
+			else if (strcmp(tkn_w, "wink_visc_factor") ==0) {wink_visc_factor = atof(tkn_v);}
+			else if (strcmp(tkn_w, "wink_layer_n") ==0) {wink_layer_n = atof(tkn_v);}
 			
 			// String parameters
 			else if (strcmp(tkn_w, "sp_mode") == 0) {sp_mode = sp_mode_from_string(tkn_v);}
@@ -401,6 +407,10 @@ PetscErrorCode reader(int rank, const char fName[]){
 			exit(1);
 		}
 
+		if (c_winkler>0){
+			wink_layer_depth = wink_layer_n * depth/(Nz-1) - depth;
+		}
+		else{wink_layer_depth = -depth;}
 		/*
 		fscanf(f_parameters,"%s",str);
 		if (strcmp (str,"H_lito") == 0) fscanf(f_parameters,"%lf",&H_lito);
@@ -542,6 +552,10 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&c_winkler,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&thetat_winkler,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&passes_smooth,1,MPI_INT,0,PETSC_COMM_WORLD);
+
+	MPI_Bcast(&wink_layer_depth,1,MPIU_REAL,0,PETSC_COMM_WORLD);
+	MPI_Bcast(&wink_visc_factor,1,MPIU_REAL,0,PETSC_COMM_WORLD);
+
 
 	if (pressure_in_rheol == 0 && h_air < 0.0) {
 		PetscPrintf(PETSC_COMM_WORLD, "Specify the thickness of the air layer with the flag -h_air\n");
@@ -956,6 +970,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 		{
 			PetscPrintf(PETSC_COMM_WORLD, "\n\nUsing default strain softening parameters from Salazar-Mora et al. (2018)");
 		}
+
+		if (c_winkler>0) {PetscPrintf(PETSC_COMM_WORLD, "\n\nwink_layer_depth = %lg km\nwink_layer_visc = %lg Pa.s", wink_layer_depth/1e3,visc_MIN*wink_visc_factor);}
 		PetscPrintf(PETSC_COMM_WORLD, "\n\n");
 	}
 

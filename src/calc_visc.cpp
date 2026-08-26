@@ -34,6 +34,8 @@ extern PetscBool seed_layer_set;
 
 extern PetscBool weakening_from_interfaces_file;
 
+extern PetscReal c_winkler, wink_layer_depth, wink_visc_factor;
+
 double strain_softening(double strain, double f1, double f2)
 {
 	double fac;
@@ -236,6 +238,11 @@ double calc_visco_ponto(double T,double P, double x, double z,double geoq_ponto,
 		}
 	}
 
+	// set a fix viscosity reference viscosity at the bottom if c_winkler>0
+	if (c_winkler > 0 && z<wink_layer_depth){
+		visco_real = visc_MIN*wink_visc_factor;
+	} 
+	
 	//printf("%lf %lg %lg %lg\n",z,P,e2_inva,visco_real);
 	visco_real /=visc0_scaled;
 	

@@ -694,7 +694,7 @@ PetscErrorCode calc_kinematic_winkler(){
 	PetscReal local_thetat = thetat_winkler;
 
 	// Threshold for filtering of instabilities of small time steps (10% of dt_MAX)
-	if (dt_calor_sec <= 0.1*dt_MAX){
+	if (dt_calor_sec <= 0.1*dt_MAX*seg_per_ano){
 		local_c_winkler=0.25*c_winkler; // just 1/4 of the necessary restoration
 		local_dt_sec = 10000*seg_per_ano;  // virtual dt to decrease restored velocity
 		local_thetat = 0.9;  // temporal smooth
