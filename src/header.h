@@ -148,6 +148,12 @@ PetscScalar *friction_angle_max;
 PetscBool   weakening_from_interfaces_file = PETSC_FALSE;
 PetscScalar *conductivity;
 
+PetscReal A_healing = 3.17E-14; // per second =  1/Myr
+PetscReal k_healing = 10.0;
+PetscReal T0_healing = 0.0;
+
+PetscBool strain_healing = PETSC_FALSE;
+
 int tcont=0;
 
 double seg_per_ano = 365.0*24.0*3600.0;
@@ -406,7 +412,7 @@ PetscReal adiabatic_scaled;
 PetscReal strain_rate0_scaled;
 PetscReal pressure0_scaled;
 
-PetscReal air_threshold_density;
+PetscReal air_threshold_density = 100.0;
 
 PetscBool export_kappa = PETSC_FALSE;
 

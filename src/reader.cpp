@@ -195,6 +195,11 @@ extern PetscReal strain_rate0_scaled;
 
 extern PetscReal air_threshold_density;
 
+extern PetscBool strain_healing;
+extern PetscReal A_healing;
+extern PetscReal k_healing;
+extern PetscReal T0_healing;
+
 // Reads input ASCII files
 PetscErrorCode reader(int rank, const char fName[]){
 	int nline;
@@ -281,6 +286,13 @@ PetscErrorCode reader(int rank, const char fName[]){
 			else if (strcmp(tkn_w, "continental_slope") ==0) {continental_slope = atof(tkn_v);}
 			else if (strcmp(tkn_w, "strain_sed") ==0) {strain_sed = atof(tkn_v);}
 			else if (strcmp(tkn_w, "aggradation_rate") ==0) {aggradation_rate = atof(tkn_v);}
+
+			else if (strcmp(tkn_w, "A_healing") == 0) {A_healing = atof(tkn_v);}
+			else if (strcmp(tkn_w, "T0_healing") == 0) {T0_healing = atof(tkn_v);}
+			else if (strcmp(tkn_w, "k_healing") == 0) {k_healing = atof(tkn_v);}
+			else if (strcmp(tkn_w, "strain_healing") == 0) {strain_healing = check_a_b_bool(tkn_w, tkn_v, "True", "False");}
+
+			else if (strcmp(tkn_w, "air_threshold_density") == 0) {air_threshold_density = atof(tkn_v);}
 
 			// String parameters
 			else if (strcmp(tkn_w, "sp_mode") == 0) {sp_mode = sp_mode_from_string(tkn_v);}
@@ -427,6 +439,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&dt_MAX,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&print_step,1,MPI_LONG,0,PETSC_COMM_WORLD);
 
+	MPI_Bcast(&air_threshold_density,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
+
 	MPI_Bcast(&visco_r,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&visc_MAX,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&visc_MIN,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
@@ -529,6 +543,11 @@ PetscErrorCode reader(int rank, const char fName[]){
 	MPI_Bcast(&strain_sed,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&aggradation_rate,1,MPIU_REAL,0,PETSC_COMM_WORLD);
 
+	MPI_Bcast(&strain_healing,1,MPI_C_BOOL,0,PETSC_COMM_WORLD);
+	MPI_Bcast(&A_healing,1,MPIU_REAL,0,PETSC_COMM_WORLD);
+	MPI_Bcast(&k_healing,1,MPIU_REAL,0,PETSC_COMM_WORLD);
+	MPI_Bcast(&T0_healing,1,MPIU_REAL,0,PETSC_COMM_WORLD);
+
 	if (pressure_in_rheol == 0 && h_air < 0.0) {
 		PetscPrintf(PETSC_COMM_WORLD, "Specify the thickness of the air layer with the flag -h_air\n");
 		PetscPrintf(PETSC_COMM_WORLD, "(you adopted depth dependent rheology: pressure_in_rheol = 0)\n");
@@ -592,7 +611,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 
 
 
-	air_threshold_density = 100.0/rho0_scaled;
+	air_threshold_density = air_threshold_density/rho0_scaled;
 
 
 
