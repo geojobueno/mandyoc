@@ -165,6 +165,8 @@ extern PetscScalar *var_bcv_time;
 extern PetscScalar *var_bcv_scale;
 extern PetscInt n_var_bcv;
 
+extern PetscReal *sediment_time;
+extern PetscInt n_spvc;
 extern PetscReal *sediment_layer_time;
 extern PetscInt *sediment_layer_id;
 extern PetscInt n_sediment_layer;
@@ -1060,7 +1062,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 				var_bcv_time[i] = file_bcvs[i][0];
 				var_bcv_scale[i] = file_bcvs[i][1];
 
-				printf("%05.2lf Myr, scale factor = %07.4lf\n",var_bcv_time[i],var_bcv_scale[i]);
+				printf("%06.2lf Myr, scale factor = %07.4lf\n",var_bcv_time[i],var_bcv_scale[i]);
 			};
 			printf("\n  -----------------------  \n");
 		}
@@ -1089,7 +1091,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 			printf("multi_veloc.txt (%d updates):\n",n_mv);
 			for (int i=0; i<n_mv; i++){
 				mv_time[i] = file_multiveloc[i][0];
-				printf("%05.2lf Myr \n",mv_time[i]);
+				printf("%06.2lf Myr \n",mv_time[i]);
 			};
 			printf("\n  -----------------------  \n");
 		}
@@ -1098,81 +1100,62 @@ PetscErrorCode reader(int rank, const char fName[]){
 		MPI_Bcast(mv_time,n_mv,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 	}
 
-	// Multiple sediment layer
-	if (dimensions == 2 && sp_surface_processes) {
-		PetscInt initial_active_sediment_layer;
-		FILE *f_sediment_layers;
-
-		f_sediment_layers = fopen("sediment_layers.txt", "r");
-
-		if (f_sediment_layers == NULL) {
-			PetscPrintf(PETSC_COMM_WORLD, "\n\n\n\sediment_layers.txt not found\n\n\n\n");
-			exit(1);
-		}
-
-		if (rank == 0) {
-			fscanf(f_sediment_layers, "%d%d", &n_sediment_layer, &initial_active_sediment_layer);
-		}
-
-		active_sediment_layer = initial_active_sediment_layer;
-
-		MPI_Bcast(&n_sediment_layer, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-		PetscCalloc1(n_sediment_layer, &sediment_layer_id);
-		PetscCalloc1(n_sediment_layer, &sediment_layer_time);
-
-		if (rank == 0) {
-			PetscPrintf(PETSC_COMM_WORLD, "Multiple sediment layer\n");
-
-			PetscPrintf(PETSC_COMM_WORLD, "%lf Myr, sediment_layer = %d (initial active sediment layer)\n", 0.0, active_sediment_layer);
-
-			for (int i = 0; i < n_sediment_layer; i++) {
-				fscanf(f_sediment_layers, "%lf%d", &sediment_layer_time[i], &sediment_layer_id[i]);
-				PetscPrintf(PETSC_COMM_WORLD, "%lf Myr, sediment_layer = %d\n", sediment_layer_time[i], sediment_layer_id[i]);
+	// File with the [S]urface [P]rocesses [v]ariable [c]onditions
+	bool cond_read_sedparams = ((sp_mode == SP_SEDIMENTATION_RATE_LIMITED)||(sp_mode == SP_THEUNISSEN_SEDIMENTATION)); 
+	if (dimensions == 2 && cond_read_sedparams) {
+		PetscInt initial_sed_layer;
+		std::vector<std::vector<double>> file_surfproc;
+		if (rank==0){
+			n_spvc = read_generic_file("SP_vc.txt",file_surfproc);
+			if (n_spvc<=0){
+				PetscPrintf(PETSC_COMM_WORLD, "Error reading 'SP_vc.txt'.\n");
+            	exit(1);
 			}
-
-			PetscPrintf(PETSC_COMM_WORLD, "\n\n");
-			fclose(f_sediment_layers);
 		}
+		
+		MPI_Bcast(&n_spvc,1,MPI_INT,0,PETSC_COMM_WORLD);
+		PetscCalloc1(n_spvc, &sediment_time);
+		PetscCalloc1(n_spvc, &sediment_layer_id);
+		PetscCalloc1(n_spvc, &sedimentation_rate_value);
 
-		MPI_Bcast(sediment_layer_time, n_sediment_layer, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
-		MPI_Bcast(sediment_layer_id, n_sediment_layer, MPI_INT, 0, PETSC_COMM_WORLD);
+		if (sp_mode == SP_THEUNISSEN_SEDIMENTATION){  // TIME   LAYER   SED.RATE   LD  
+
+			if (rank==0){
+				printf("  -----------------------  \n");
+				printf(" THEUNISSEN SEDIMENTATION \n");
+				printf("SP_vc.txt (%d updates):\n",n_spvc);
+				for (int i; i<n_spvc;i++){
+					sediment_time[i] = file_surfproc[i][0];
+					sediment_layer_id[i] = int(file_surfproc[i][1]);
+					sedimentation_rate_value[i] = file_surfproc[i][2];
+					printf("%06.2lf Myr, (%03d) %07.2f m^2/y\n",sediment_time[i],sediment_layer_id[i],sedimentation_rate_value[i]);
+					if (i==0){active_sediment_layer=sediment_layer_id[i];} // setting the first sed layer
+				}
+				
+			}
+		
+		} else if (sp_mode == SP_SEDIMENTATION_RATE_LIMITED){ // TIME   LAYER   SED.RATE
+			if (rank==0){
+				printf("  -----------------------  \n");
+				printf(" SEDIMENTATION RATE LIMITED \n");
+				printf("SP_vc.txt (%d updates):\n",n_spvc);
+				for (int i; i<n_spvc;i++){
+					sediment_time[i] = file_surfproc[i][0];
+					sediment_layer_id[i] = file_surfproc[i][1];
+					sedimentation_rate_value[i] = file_surfproc[i][2];
+					printf("%06.2lf Myr, (%03d) %07.2f m^2/y\n",sediment_time[i],sediment_layer_id[i],sedimentation_rate_value[i]);
+					if (i==0){initial_sed_layer=sediment_layer_id[i];}
+				}
+				active_sediment_layer = initial_sed_layer;
+			}
+		}
+		std::vector<std::vector<double>>().swap(file_surfproc);
+
+		MPI_Bcast(sediment_time, n_spvc, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(sedimentation_rate_value, n_spvc, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(sediment_layer_id, n_spvc, MPI_INT, 0, PETSC_COMM_WORLD);
 		MPI_Bcast(&active_sediment_layer, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-	}
-
-
-	// SP_Mode SP_SEDIMENTATION_RATE_LIMITED
-	if (dimensions == 2 && ((sp_mode == SP_SEDIMENTATION_RATE_LIMITED)||(sp_mode == SP_THEUNISSEN_SEDIMENTATION))) {
-		FILE *f_sedimentation_rate;
-
-		f_sedimentation_rate = fopen("sedimentation_rate.txt", "r");
-
-		if (f_sedimentation_rate == NULL) {
-			PetscPrintf(PETSC_COMM_WORLD, "\n\n\n\sedimentation_rate.txt not found\n\n\n\n");
-			exit(1);
-		}
-
-		if (rank == 0) {
-			fscanf(f_sedimentation_rate, "%d", &n_sedimentation_rate);
-		}
-
-		MPI_Bcast(&n_sedimentation_rate, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-		PetscCalloc1(n_sedimentation_rate, &sedimentation_rate_value);
-		PetscCalloc1(n_sedimentation_rate, &sedimentation_rate_time);
-
-		if (rank == 0) {
-			PetscPrintf(PETSC_COMM_WORLD, "Variable sedimentation rate\n");
-
-			for (int i = 0; i < n_sedimentation_rate; i++) {
-				fscanf(f_sedimentation_rate, "%lf%lf", &sedimentation_rate_time[i], &sedimentation_rate_value[i]);
-				PetscPrintf(PETSC_COMM_WORLD, "%lf Myr, sedimentation_rate = %lf\n", sedimentation_rate_time[i], sedimentation_rate_value[i]);
-			}
-
-			PetscPrintf(PETSC_COMM_WORLD, "\n\n");
-			fclose(f_sedimentation_rate);
-		}
-
-		MPI_Bcast(sedimentation_rate_time, n_sedimentation_rate, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
-		MPI_Bcast(sedimentation_rate_value, n_sedimentation_rate, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
+		
 	}
 
 	// Variable base level
@@ -1197,7 +1180,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 				var_bl_time[i] = file_base_levels[i][0];
 				var_bl_value[i] = file_base_levels[i][1];
 
-				printf("%05.2lf Myr, base level = %07.1lf\n",var_bl_time[i],var_bl_value[i]);
+				printf("%06.2lf Myr, base level = %07.1lf\n",var_bl_time[i],var_bl_value[i]);
 			};
 			printf("\n  -----------------------  \n");
 		} 
@@ -1208,7 +1191,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 		MPI_Bcast(var_bl_value,n_var_bl,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 	}
 
-	PetscPrintf(PETSC_COMM_WORLD,"\n ========================== \n\n");
+	PetscPrintf(PETSC_COMM_WORLD,"\n=========================== \n\n");
 	// put it variable over time
 	continental_slope = tan(continental_slope * PETSC_PI / 180.0); //Update the continental slope in degrees to its tangent value
 

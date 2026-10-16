@@ -60,6 +60,9 @@ PetscBool plot_sediment = PETSC_FALSE; // PETSC_TRUE/PETSC_FALSE
 PetscBool a2l = PETSC_TRUE; // PETSC_TRUE/PETSC_FALSE
 PetscBool magmatism_flag = PETSC_FALSE; // 1=True, 0=False
 PetscBool magmatism_extraction_flag = PETSC_TRUE;
+// variables exporting
+PetscBool export_kappa = PETSC_FALSE;
+PetscBool export_lithology = PETSC_FALSE;
 // Parameter file native C variables
 int dimensions = 2;
 long Nx = -1;
@@ -417,35 +420,40 @@ PetscReal adiabatic_scaled;
 PetscReal strain_rate0_scaled;
 PetscReal pressure0_scaled;
 
+// Variables for surface processes and time conditions 
+
 // water loading
 PetscReal air_threshold_density = 100.0;
 PetscInt water_interface = -2;
 
-// variables exporting
-PetscBool export_kappa = PETSC_FALSE;
-PetscBool export_lithology = PETSC_FALSE;
-
 // surface processes
 DM dmcell_s;
 DM dms_s;
-PetscInt dms_s_ppe = 2; // dm swarm surface number of particles per element
+PetscInt dms_s_ppe = 20; // dm swarm surface number of particles per element
 PetscInt buffer_s;
+
+// for SP_vc.txt
+PetscInt n_spvc=0;
+PetscReal *sediment_time;
+PetscInt *sediment_layer_id;
+PetscReal *sedimentation_rate_value;
+
+PetscInt active_sediment_layer;
+PetscInt cont_sediment_file = 0;
+
 
 // Multiple sediment layer
 PetscReal *sediment_layer_time;
-PetscInt *sediment_layer_id;
 PetscInt n_sediment_layer = 0;
 PetscInt cont_sediment_layer = 0;
-PetscInt active_sediment_layer;
 
 // SP_Mode SP_SEDIMENTATION_RATE_LIMITED
 PetscReal *sedimentation_rate_time;
-PetscReal *sedimentation_rate_value;
 PetscInt n_sedimentation_rate=0;
 PetscInt cont_sedimentation_rate=0;
 PetscReal sedimentation_rate = 0.0;
 
-// Variable base level - Joao Bueno development
+// Variable base level
 PetscInt variable_baselevel = 0;
 PetscReal *var_bl_time;
 PetscReal *var_bl_value;

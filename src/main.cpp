@@ -60,6 +60,7 @@ PetscErrorCode sp_evaluate_surface_processes(PetscInt dimensions, PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties(PetscInt active_layer);
 PetscErrorCode sp_update_active_sediment_layer(double time);
 PetscErrorCode sp_update_sedimentation_rate(double time);
+PetscErrorCode sp_update_sediments_parameters(double time, SP_Mode mode);
 PetscErrorCode sp_update_base_level(double time);
 PetscErrorCode sp_destroy();
 PetscErrorCode sp_view_2d(DM dm, const char prefix[]);
@@ -281,19 +282,15 @@ int main(int argc,char **args)
 			ierr = multi_veloc_change(Veloc_fut,tempo);
 		}
 
-		if (dimensions == 2 && sp_surface_processes) {
-			ierr = sp_update_active_sediment_layer(tempo);
-		}
-
 		if (dimensions == 2 && variable_baselevel == 1){
-			ierr = sp_update_base_level(tempo);
-			PetscPrintf(PETSC_COMM_WORLD,"base level = %.3g m\n", sea_level);
+			ierr = sp_update_base_level(tempo); CHKERRQ(ierr); // Print inside the function		
+			// PetscPrintf(PETSC_COMM_WORLD,"base level = %.3g m\n", sea_level);
 			CHKERRQ(ierr);
 		}
 
 		if (dimensions == 2 && ((sp_mode == SP_SEDIMENTATION_RATE_LIMITED)||(sp_mode == SP_THEUNISSEN_SEDIMENTATION))) {
-			ierr = sp_update_sedimentation_rate(tempo);
-			PetscPrintf(PETSC_COMM_WORLD,"sedimentation rate = %.3g m^2/yr, active sediment layer = %d\n", sedimentation_rate, active_sediment_layer);
+			ierr = sp_update_sediments_parameters(tempo, sp_mode); CHKERRQ(ierr); // Print inside the function			
+			// PetscPrintf(PETSC_COMM_WORLD,"sedimentation rate = %.3g m^2/yr, active sediment layer = %d\n", sedimentation_rate, active_sediment_layer);
 		}
 
 		ierr = build_thermal(dimensions);CHKERRQ(ierr);
