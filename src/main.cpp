@@ -58,8 +58,6 @@ PetscErrorCode sp_move_surface_swarm(PetscInt dimensions, PetscReal dt);
 PetscErrorCode sp_surface_swarm_interpolation();
 PetscErrorCode sp_evaluate_surface_processes(PetscInt dimensions, PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties(PetscInt active_layer);
-PetscErrorCode sp_update_active_sediment_layer(double time);
-PetscErrorCode sp_update_sedimentation_rate(double time);
 PetscErrorCode sp_update_sediments_parameters(double time, SP_Mode mode);
 PetscErrorCode sp_update_base_level(double time);
 PetscErrorCode sp_destroy();

@@ -47,12 +47,6 @@ extern PetscReal *sedimentation_rate_value;
 extern PetscInt active_sediment_layer;
 extern PetscReal sedimentation_rate;
 
-extern PetscReal *sediment_layer_time;
-extern PetscInt n_sediment_layer;
-extern PetscInt cont_sediment_layer;
-extern PetscReal *sedimentation_rate_time;
-extern PetscInt n_sedimentation_rate;
-extern PetscInt cont_sedimentation_rate;
 
 // Variable base level
 extern PetscInt variable_baselevel;
@@ -85,8 +79,6 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_only(PetscReal dt)
 PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_rate_limited(PetscReal dt);
 PetscErrorCode sp_evaluate_surface_processes_2d_theunissen(PetscReal dt);
 PetscErrorCode sp_update_surface_swarm_particles_properties(PetscInt active_layer);
-PetscErrorCode sp_update_active_sediment_layer(double time);
-PetscErrorCode sp_update_sedimentation_rate(double time);
 PetscErrorCode sp_update_sediments_parameters(double time, SP_Mode mode);
 PetscErrorCode sp_update_base_level(double time);
 PetscErrorCode DMLocatePoints_DMDARegular_2d(DM dm,Vec pos,DMPointLocationType ltype, PetscSF cellSF);
@@ -666,7 +658,7 @@ PetscErrorCode sp_evaluate_surface_processes_2d_sedimentation_only(PetscReal dt)
     for (p = 0; p < nlocal; p++) {
         if (array[2*p+1] < hsl) {
             array[2*p+1] = hsl;
-            PetscSynchronizedPrintf(PETSC_COMM_WORLD, "[SP sedimentation_only] [%d] updated surface [%.3e | %d] = %.3e\n", rank, array[2*p], p, hsl);
+            // PetscSynchronizedPrintf(PETSC_COMM_WORLD, "[SP sedimentation_only] [%d] updated surface [%.3e | %d] = %.3e\n", rank, array[2*p], p, hsl);
         }
     }
 
@@ -1188,38 +1180,12 @@ PetscErrorCode sp_update_sediments_parameters(double time, SP_Mode mode)
         
         cont_sediment_file++;
     }
-    PetscPrintf(PETSC_COMM_WORLD, "Sedimentation: (%03d) %07.2f m^2/y ", active_sediment_layer, sedimentation_rate);
+    PetscPrintf(PETSC_COMM_WORLD, "sedimentation: (%03d) %05.1f m^2/y ", active_sediment_layer, sedimentation_rate);
     if (mode==SP_THEUNISSEN_SEDIMENTATION){
         // update Ld
         // PetscPrintf(PETSC_COMM_WORLD, "; Ld = %06d", LD);
     }
     PetscPrintf(PETSC_COMM_WORLD, "\n");
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode sp_update_sedimentation_rate(double time)
-{
-    PetscFunctionBeginUser;
-
-    if (cont_sedimentation_rate < n_sedimentation_rate && time > 1.0E6*sedimentation_rate_time[cont_sedimentation_rate]) {
-        sedimentation_rate = sedimentation_rate_value[cont_sedimentation_rate];
-
-        cont_sedimentation_rate++;
-	}
-
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode sp_update_active_sediment_layer(double time)
-{
-    PetscFunctionBeginUser;
-
-    if (cont_sediment_layer < n_sediment_layer && time > 1.0E6*sediment_layer_time[cont_sediment_layer]) {
-        active_sediment_layer = sediment_layer_id[cont_sediment_layer];
-
-        cont_sediment_layer++;
-	}
-
     PetscFunctionReturn(0);
 }
 

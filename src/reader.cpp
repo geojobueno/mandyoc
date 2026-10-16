@@ -165,16 +165,11 @@ extern PetscScalar *var_bcv_time;
 extern PetscScalar *var_bcv_scale;
 extern PetscInt n_var_bcv;
 
-extern PetscReal *sediment_time;
 extern PetscInt n_spvc;
-extern PetscReal *sediment_layer_time;
-extern PetscInt *sediment_layer_id;
-extern PetscInt n_sediment_layer;
 extern PetscInt active_sediment_layer;
-
-extern PetscReal *sedimentation_rate_time;
+extern PetscReal *sediment_time;
+extern PetscInt *sediment_layer_id;
 extern PetscReal *sedimentation_rate_value;
-extern PetscInt n_sedimentation_rate;
 
 extern PetscInt variable_climate;
 
@@ -1123,12 +1118,13 @@ PetscErrorCode reader(int rank, const char fName[]){
 			if (rank==0){
 				printf("  -----------------------  \n");
 				printf(" THEUNISSEN SEDIMENTATION \n");
+				printf(" TIME,  (LAYER) SED. RATE \n");
 				printf("SP_vc.txt (%d updates):\n",n_spvc);
 				for (int i; i<n_spvc;i++){
 					sediment_time[i] = file_surfproc[i][0];
 					sediment_layer_id[i] = int(file_surfproc[i][1]);
 					sedimentation_rate_value[i] = file_surfproc[i][2];
-					printf("%06.2lf Myr, (%03d) %07.2f m^2/y\n",sediment_time[i],sediment_layer_id[i],sedimentation_rate_value[i]);
+					printf("%06.2lf Myr, (%03d) %06.2f m^2/y\n",sediment_time[i],sediment_layer_id[i],sedimentation_rate_value[i]);
 					if (i==0){active_sediment_layer=sediment_layer_id[i];} // setting the first sed layer
 				}
 				
@@ -1138,15 +1134,15 @@ PetscErrorCode reader(int rank, const char fName[]){
 			if (rank==0){
 				printf("  -----------------------  \n");
 				printf(" SEDIMENTATION RATE LIMITED \n");
+				printf(" TIME,  (LAYER) SED. RATE \n");
 				printf("SP_vc.txt (%d updates):\n",n_spvc);
 				for (int i; i<n_spvc;i++){
 					sediment_time[i] = file_surfproc[i][0];
 					sediment_layer_id[i] = file_surfproc[i][1];
 					sedimentation_rate_value[i] = file_surfproc[i][2];
-					printf("%06.2lf Myr, (%03d) %07.2f m^2/y\n",sediment_time[i],sediment_layer_id[i],sedimentation_rate_value[i]);
-					if (i==0){initial_sed_layer=sediment_layer_id[i];}
+					printf("%06.2lf Myr, (%03d) %05.1f m^2/y\n",sediment_time[i],sediment_layer_id[i],sedimentation_rate_value[i]);
+					if (i==0){active_sediment_layer=sediment_layer_id[i];}
 				}
-				active_sediment_layer = initial_sed_layer;
 			}
 		}
 		std::vector<std::vector<double>>().swap(file_surfproc);

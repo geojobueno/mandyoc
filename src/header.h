@@ -440,18 +440,7 @@ PetscReal *sedimentation_rate_value;
 
 PetscInt active_sediment_layer;
 PetscInt cont_sediment_file = 0;
-
-
-// Multiple sediment layer
-PetscReal *sediment_layer_time;
-PetscInt n_sediment_layer = 0;
-PetscInt cont_sediment_layer = 0;
-
-// SP_Mode SP_SEDIMENTATION_RATE_LIMITED
-PetscReal *sedimentation_rate_time;
-PetscInt n_sedimentation_rate=0;
-PetscInt cont_sedimentation_rate=0;
-PetscReal sedimentation_rate = 0.0;
+PetscReal sedimentation_rate;
 
 // Variable base level
 PetscInt variable_baselevel = 0;
