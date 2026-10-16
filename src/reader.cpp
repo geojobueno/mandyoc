@@ -1033,9 +1033,11 @@ PetscErrorCode reader(int rank, const char fName[]){
 	
 	MPI_Bcast(&air_threshold_density,1,MPI_DOUBLE,0,PETSC_COMM_WORLD);
 	MPI_Bcast(&water_interface,1,MPI_INT,0,PETSC_COMM_WORLD);
-	// Broadcast, special cases
-//	MPI_Bcast(&n_interfaces,1,MPI_INT,0,PETSC_COMM_WORLD); // Broadcast after interfaces.txt
-
+	
+	// Checking the variable conditions in time
+	PetscPrintf(PETSC_COMM_WORLD,"\n=========================== \n");
+	PetscPrintf(PETSC_COMM_WORLD,"Variable conditions in time\n\n");
+	// PetscPrintf(PETSC_COMM_WORLD,"\n--------------------------- \n");
 	// Variable [B]oundary [C]onditions for the [V]elocity
 	if (variable_bcv==1){
 		std::vector<std::vector<double>> file_bcvs;
@@ -1052,6 +1054,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 		PetscCalloc1(n_var_bcv,&var_bcv_time);
 
 		if (rank==0){
+			printf("  -----------------------  \n\n");
 			printf("scale_bcv.txt (%d updates):\n",n_var_bcv);
 			for (int i=0; i<n_var_bcv; i++){
 				var_bcv_time[i] = file_bcvs[i][0];
@@ -1059,32 +1062,39 @@ PetscErrorCode reader(int rank, const char fName[]){
 
 				printf("%05.2lf Myr, scale factor = %07.4lf\n",var_bcv_time[i],var_bcv_scale[i]);
 			};
+			printf("\n  -----------------------  \n");
 		}
+		std::vector<std::vector<double>>().swap(file_bcvs); // clear the memory
+
 		MPI_Bcast(var_bcv_time,n_var_bcv,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 		MPI_Bcast(var_bcv_scale,n_var_bcv,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 	}
 
+	// Multi Velocity fields
 	if (multi_velocity==1){
-		FILE *f_mv;
-		f_mv = fopen("multi_veloc.txt","r");
-		if (f_mv==NULL){
-			PetscPrintf(PETSC_COMM_WORLD,"\n\n\n\nmulti_veloc.txt not found\n\n\n\n");
-			exit(1);
-		}
+		std::vector<std::vector<double>> file_multiveloc;
 		if (rank==0){
-			fscanf(f_mv,"%d",&n_mv);
+			n_mv = read_generic_file("multi_veloc.txt",file_multiveloc);
+			if (n_mv<=0){
+				PetscPrintf(PETSC_COMM_WORLD, "Error reading 'multi_veloc.txt'.\n");
+            	exit(1);
+			}
 		}
+
 		MPI_Bcast(&n_mv,1,MPI_INT,0,PETSC_COMM_WORLD);
 		PetscCalloc1(n_mv,&mv_time);
+		
 		if (rank==0){
-			printf("Multi velocity files\n");
-			for (int i=0;i<n_mv;i++){
-				fscanf(f_mv,"%lf",&mv_time[i]);
-				printf("%lf Myr\n",mv_time[i]);
-			}
-			fclose(f_mv);
-			printf("\n");
+			printf("  -----------------------  \n\n");
+			printf("multi_veloc.txt (%d updates):\n",n_mv);
+			for (int i=0; i<n_mv; i++){
+				mv_time[i] = file_multiveloc[i][0];
+				printf("%05.2lf Myr \n",mv_time[i]);
+			};
+			printf("\n  -----------------------  \n");
 		}
+		std::vector<std::vector<double>>().swap(file_multiveloc); // clear the memory
+
 		MPI_Bcast(mv_time,n_mv,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 	}
 
@@ -1165,7 +1175,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 		MPI_Bcast(sedimentation_rate_value, n_sedimentation_rate, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
 	}
 
-	// Variable Base Level
+	// Variable base level
 	if (variable_baselevel==1) {
 		std::vector<std::vector<double>> file_base_levels;
 		if (rank==0){
@@ -1181,6 +1191,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 		PetscCalloc1(n_var_bl, &var_bl_value);
 		
 		if (rank==0){
+			printf("  -----------------------  \n\n");
 			printf("base_level.txt (%d updates):\n",n_var_bl);
 			for (int i=0; i<n_var_bl; i++){
 				var_bl_time[i] = file_base_levels[i][0];
@@ -1188,6 +1199,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 
 				printf("%05.2lf Myr, base level = %07.1lf\n",var_bl_time[i],var_bl_value[i]);
 			};
+			printf("\n  -----------------------  \n");
 		} 
 		std::vector<std::vector<double>>().swap(file_base_levels); // clear the memory
 
@@ -1196,6 +1208,8 @@ PetscErrorCode reader(int rank, const char fName[]){
 		MPI_Bcast(var_bl_value,n_var_bl,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 	}
 
+	PetscPrintf(PETSC_COMM_WORLD,"\n ========================== \n\n");
+	// put it variable over time
 	continental_slope = tan(continental_slope * PETSC_PI / 180.0); //Update the continental slope in degrees to its tangent value
 
 	PetscFunctionReturn(0);
