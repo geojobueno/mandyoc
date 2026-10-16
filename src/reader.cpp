@@ -1,9 +1,17 @@
 #include <petscksp.h>
 #include "sp_mode.h"
 
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+
 // Prototypes
 int check_a_b(char tkn_w[], char tkn_v[], const char str_a[], const char str_b[]);
 PetscBool check_a_b_bool(char tkn_w[], char tkn_v[], const char str_a[], const char str_b[]);
+// int read_generic_file();
+template <typename T> // this creates a "Template function" in C++
+int read_generic_file(const std::string & file_name, std::vector<std::vector<T> >& data_matrix);
 //void ErrorInterfaces(int rank, const char fname[], int flag);
 void ErrorInterfaces();
 PetscBool check_prop(char *s);
@@ -1030,26 +1038,27 @@ PetscErrorCode reader(int rank, const char fName[]){
 
 	// Variable [B]oundary [C]onditions for the [V]elocity
 	if (variable_bcv==1){
-		FILE *f_bcv;
-		f_bcv = fopen("scale_bcv.txt","r");
-		if (f_bcv==NULL) {
-			PetscPrintf(PETSC_COMM_WORLD,"\n\n\n\nscale_bcv.txt not found\n\n\n\n");
-			exit(1);
-		}
+		std::vector<std::vector<double>> file_bcvs;
 		if (rank==0){
-			fscanf(f_bcv,"%d",&n_var_bcv);
+			n_var_bcv = read_generic_file("scale_bcv.txt",file_bcvs);
+			if (n_var_bcv<=0){
+				PetscPrintf(PETSC_COMM_WORLD, "Error reading 'scale_bcv.txt'.\n");
+            	exit(1);
+			}
 		}
+
 		MPI_Bcast(&n_var_bcv,1,MPI_INT,0,PETSC_COMM_WORLD);
 		PetscCalloc1(n_var_bcv,&var_bcv_scale);
 		PetscCalloc1(n_var_bcv,&var_bcv_time);
+
 		if (rank==0){
-			printf("Variable boundary condition for velocity\n");
-			for (int i=0;i<n_var_bcv;i++){
-				fscanf(f_bcv,"%lf%lf",&var_bcv_time[i],&var_bcv_scale[i]);
-				printf("%lf Myr, scale factor = %lf\n",var_bcv_time[i],var_bcv_scale[i]);
-			}
-			printf("\n\n");
-			fclose(f_bcv);
+			printf("scale_bcv.txt (%d updates):\n",n_var_bcv);
+			for (int i=0; i<n_var_bcv; i++){
+				var_bcv_time[i] = file_bcvs[i][0];
+				var_bcv_scale[i] = file_bcvs[i][1];
+
+				printf("%05.2lf Myr, scale factor = %07.4lf\n",var_bcv_time[i],var_bcv_scale[i]);
+			};
 		}
 		MPI_Bcast(var_bcv_time,n_var_bcv,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 		MPI_Bcast(var_bcv_scale,n_var_bcv,MPIU_SCALAR,0,PETSC_COMM_WORLD);
@@ -1158,28 +1167,31 @@ PetscErrorCode reader(int rank, const char fName[]){
 
 	// Variable Base Level
 	if (variable_baselevel==1) {
-		FILE *f_bl;
-		f_bl = fopen("base_level.txt","r");
-		if (f_bl==NULL) { //Check if the file exists
-			PetscPrintf(PETSC_COMM_WORLD,"\n\n\n\nbase_level.txt not found\n\n\n\n");
-			exit(1);
-		}
+		std::vector<std::vector<double>> file_base_levels;
 		if (rank==0){
-			fscanf(f_bl, "%d", &n_var_bl); // Number of time steps with different base level
+			n_var_bl = read_generic_file("base_level.txt",file_base_levels);
+			if (n_var_bl<=0){
+				PetscPrintf(PETSC_COMM_WORLD, "Error reading 'base_level.txt'.\n");
+            	exit(1);
+			}
 		}
+
 		MPI_Bcast(&n_var_bl, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 		PetscCalloc1(n_var_bl, &var_bl_time);
 		PetscCalloc1(n_var_bl, &var_bl_value);
-
+		
 		if (rank==0){
-			printf("Variable base level\n");
-			for (int i=0;i<n_var_bl;i++){
-				fscanf(f_bl,"%lf%lf",&var_bl_time[i],&var_bl_value[i]);
-				printf("%.2lf Myr, base level = %.1lf\n",var_bl_time[i],var_bl_value[i]);
-			}
-			printf("\n\n");
-			fclose(f_bl);
-		}
+			printf("base_level.txt (%d updates):\n",n_var_bl);
+			for (int i=0; i<n_var_bl; i++){
+				var_bl_time[i] = file_base_levels[i][0];
+				var_bl_value[i] = file_base_levels[i][1];
+
+				printf("%05.2lf Myr, base level = %07.1lf\n",var_bl_time[i],var_bl_value[i]);
+			};
+		} 
+		std::vector<std::vector<double>>().swap(file_base_levels); // clear the memory
+
+
 		MPI_Bcast(var_bl_time,n_var_bl,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 		MPI_Bcast(var_bl_value,n_var_bl,MPIU_SCALAR,0,PETSC_COMM_WORLD);
 	}
@@ -1326,4 +1338,40 @@ const char* sp_mode_to_string(SP_Mode mode) {
 	fprintf(stderr, "Invalid mode value: %d\n", (int)mode);
 
     exit(1);
+}
+
+template <typename T> // this creates a "Template function" in C++
+int read_generic_file(const std::string & file_name,
+						std::vector<std::vector<T> >& data_matrix){ 
+	//"T" is replaced with the type of the vector
+	// "datamatrix" is a generic "list of lists" 
+	int n_lines = 0;
+
+	std::ifstream file(file_name);
+	if (!file.is_open()){
+		printf("The file %s could not be opened.",file_name.c_str());
+		return -1;
+	}
+	
+	std::string line;
+	while(std::getline(file,line)){
+		// check if the line is empty
+		if (line.find_first_not_of(" \t\r\n") == std::string::npos) {
+            continue;
+        }
+		
+		std::istringstream iss(line);
+		T value;
+		std::vector<T> current_line;
+
+		while (iss >> value){
+			current_line.push_back(value); // pushing values into the vector
+		}
+
+		if (!current_line.empty()){
+			data_matrix.push_back(current_line);
+			n_lines += 1;
+		}
+	}
+	return n_lines;
 }
