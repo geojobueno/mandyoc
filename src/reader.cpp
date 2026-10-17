@@ -12,6 +12,9 @@ PetscBool check_a_b_bool(char tkn_w[], char tkn_v[], const char str_a[], const c
 // int read_generic_file();
 template <typename T> // this creates a "Template function" in C++
 int read_generic_file(const std::string & file_name, std::vector<std::vector<T> >& data_matrix);
+template <typename T>
+bool check_parameters_lines(std::string file, std::vector<std::vector<T> > datamatrix, int n_cols);
+
 //void ErrorInterfaces(int rank, const char fname[], int flag);
 void ErrorInterfaces();
 PetscBool check_prop(char *s);
@@ -1118,11 +1121,12 @@ PetscErrorCode reader(int rank, const char fName[]){
 		if (sp_mode == SP_THEUNISSEN_SEDIMENTATION){  // TIME   LAYER   SED.RATE   LD  
 			PetscCalloc1(n_spvc, &sed_Ld_array);
 			if (rank==0){
+				check_parameters_lines("SP_vc.txt", file_surfproc, 4);
 				printf("  -----------------------  \n");
 				printf(" THEUNISSEN SEDIMENTATION \n");
-				printf(" TIME,  (LAYER) SED. RATE \n");
+				printf(" TIME,  (LAYER) SED. RATE, Ld \n");
 				printf("SP_vc.txt (%d updates):\n",n_spvc);
-				for (int i; i<n_spvc;i++){
+				for (int i = 0; i<n_spvc;i++){
 					sediment_time_array[i] = file_surfproc[i][0];
 					sediment_layer_array[i] = int(file_surfproc[i][1]);
 					sedimentation_rate_array[i] = file_surfproc[i][2];
@@ -1135,13 +1139,14 @@ PetscErrorCode reader(int rank, const char fName[]){
 			MPI_Bcast(sed_Ld_array, n_spvc, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
 		} else if (sp_mode == SP_SEDIMENTATION_RATE_LIMITED){ // TIME   LAYER   SED.RATE
 			if (rank==0){
+				check_parameters_lines("SP_vc.txt", file_surfproc, 3);
 				printf("  -----------------------  \n");
 				printf(" SEDIMENTATION RATE LIMITED \n");
 				printf(" TIME,  (LAYER) SED. RATE \n");
 				printf("SP_vc.txt (%d updates):\n",n_spvc);
-				for (int i; i<n_spvc;i++){
+				for (int i = 0; i<n_spvc;i++){
 					sediment_time_array[i] = file_surfproc[i][0];
-					sediment_layer_array[i] = file_surfproc[i][1];
+					sediment_layer_array[i] = int(file_surfproc[i][1]);
 					sedimentation_rate_array[i] = file_surfproc[i][2];
 					printf("%06.2lf Myr, (%03d) %05.1f m^2/y\n",sediment_time_array[i],sediment_layer_array[i],sedimentation_rate_array[i]);
 					if (i==0){active_sediment_layer=sediment_layer_array[i];}
@@ -1370,4 +1375,18 @@ int read_generic_file(const std::string & file_name,
 		}
 	}
 	return n_lines;
+}
+template <typename T> // this creates a "Template function" in C++
+bool check_parameters_lines(std::string file, std::vector<std::vector<T> > datamatrix, int n_cols)
+{
+	std::vector<T> line;
+	for (int i = 0; i<n_cols; i++)	{
+		line = datamatrix[i];
+		if (line.size() != n_cols){
+			PetscPrintf(PETSC_COMM_WORLD,"%s has %d columns in line %d. It should be %d.\n",file.c_str(),line.size(),i,n_cols);
+			exit(1);
+			return false;
+		}
+	}
+	return true;
 }
