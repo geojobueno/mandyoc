@@ -434,13 +434,15 @@ PetscInt buffer_s;
 
 // for SP_vc.txt
 PetscInt n_spvc=0;
-PetscReal *sediment_time;
-PetscInt *sediment_layer_id;
-PetscReal *sedimentation_rate_value;
+PetscReal *sediment_time_array;
+PetscInt *sediment_layer_array;
+PetscReal *sedimentation_rate_array;
+PetscReal *sed_Ld_array; // dispersion factor for theunissen sedimentation mode
 
 PetscInt active_sediment_layer;
 PetscInt cont_sediment_file = 0;
 PetscReal sedimentation_rate;
+PetscReal sed_Ld;
 
 // Variable base level
 PetscInt variable_baselevel = 0;
