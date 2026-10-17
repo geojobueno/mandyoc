@@ -1176,7 +1176,7 @@ PetscErrorCode sp_update_sediments_parameters(double time, SP_Mode mode)
         
         if (mode==SP_THEUNISSEN_SEDIMENTATION){
             // update Ld
-            PetscPrintf(PETSC_COMM_WORLD, "(Theunissen Sed.) Ld: %06d -> %06d\n", sed_Ld, sed_Ld_array[cont_sediment_file]);
+            PetscPrintf(PETSC_COMM_WORLD, "(Theunissen Sed.) Ld: %08.1f -> %08.1f\n", sed_Ld, sed_Ld_array[cont_sediment_file]);
             sed_Ld = sed_Ld_array[cont_sediment_file];
         }
         
