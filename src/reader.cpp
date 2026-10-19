@@ -1132,7 +1132,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 					sed_Ld_array[i] = file_surfproc[i][3];
 					printf("%06.2lf Myr, (%03d) %06.2f m^2/y, Ld = %8.1f m\n",sediment_time_array[i],sediment_layer_array[i],sedimentation_rate_array[i],sed_Ld_array[i]);
 				}
-				active_sediment_layer=sediment_layer_array[i]; // setting the first sed layer
+				active_sediment_layer=sediment_layer_array[0]; // setting the first sed layer
 			}
 			MPI_Bcast(sed_Ld_array, n_spvc, MPIU_SCALAR, 0, PETSC_COMM_WORLD);
 		} else if (sp_mode == SP_SEDIMENTATION_RATE_LIMITED){ // TIME   LAYER   SED.RATE
@@ -1148,7 +1148,7 @@ PetscErrorCode reader(int rank, const char fName[]){
 					sedimentation_rate_array[i] = file_surfproc[i][2];
 					printf("%06.2lf Myr, (%03d) %05.1f m^2/y\n",sediment_time_array[i],sediment_layer_array[i],sedimentation_rate_array[i]);
 				}
-				active_sediment_layer=sediment_layer_array[i]; // setting the first sed layer
+				active_sediment_layer=sediment_layer_array[0]; // setting the first sed layer
 			}
 		}
 		std::vector<std::vector<double>>().swap(file_surfproc);
@@ -1378,10 +1378,10 @@ template <typename T> // this creates a "Template function" in C++
 bool check_parameters_lines(std::string file, std::vector<std::vector<T> > datamatrix, int n_cols)
 {
 	std::vector<T> line;
-	for (int i = 0; i<n_cols; i++)	{
+	for (auto i = 0; i<n_cols; i++)	{
 		line = datamatrix[i];
-		if (line.size() != n_cols){
-			PetscPrintf(PETSC_COMM_WORLD,"%s has %d columns in line %d. It should be %d.\n",file.c_str(),line.size(),i,n_cols);
+		if (int(line.size()) != n_cols){
+			PetscPrintf(PETSC_COMM_WORLD,"%s has %d columns in line %d. It should be %d.\n",file.c_str(),int(line.size()),int(i),n_cols);
 			exit(1);
 			return false;
 		}
