@@ -441,8 +441,8 @@ PetscReal *sed_Ld_array; // dispersion factor for theunissen sedimentation mode
 
 PetscInt active_sediment_layer;
 PetscInt cont_sediment_file = 0;
-PetscReal sedimentation_rate;
-PetscReal sed_Ld;
+PetscReal sedimentation_rate = 0.0;
+PetscReal sed_Ld = 0.0;
 
 // Variable base level
 PetscInt variable_baselevel = 0;
